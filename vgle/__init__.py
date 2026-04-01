@@ -4,7 +4,8 @@ Description: init file to contain application factory and to treat vgle director
 Authors: Brinley Hull & Anakha Krishna
 Other sources: Flask tutorial flask.com
 Created: 3/22/2026
-Last modified: 3/22/2026
+Last modified: 
+    4/1/2026 - Update from blog to query interface
 '''
 
 import os
@@ -41,8 +42,8 @@ def create_app(test_config=None):
     from . import auth
     app.register_blueprint(auth.bp)
 
-    from . import blog
-    app.register_blueprint(blog.bp)
+    from . import interface
+    app.register_blueprint(interface.bp)
     app.add_url_rule('/', endpoint='index')
 
     return app

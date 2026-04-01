@@ -12,7 +12,7 @@ http://127.0.0.1:5000/[file]
 https://flask.palletsprojects.com/en/stable/tutorial/ 
 
 ## Changing CSS
-To see changes, refresh browser page; if changes do not sure, clear browser cache
+To see changes, refresh browser page; if changes do not show, clear browser cache
 
 ## Testing
 Run pytest command in terminal. To see test code coverage, run:
