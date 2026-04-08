@@ -6,6 +6,7 @@ Other sources: Flask tutorial flask.com
 Created: 3/22/2026
 Last modified: 
     4/1/2026 - Update from blog to query interface
+    4/8/2026 - call create_index function to create inverted index and idf tables
 '''
 
 import os
@@ -45,5 +46,9 @@ def create_app(test_config=None):
     from . import interface
     app.register_blueprint(interface.bp)
     app.add_url_rule('/', endpoint='index')
+    
+    from . import inverted_index
+    with app.app_context():
+        inverted_index.create_index()
 
     return app
