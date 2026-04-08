@@ -4,8 +4,25 @@ Description: SQL commands to create empty tables
 Authors: Brinley Hull & Anakha Krishna
 Other sources: Flask tutorial flask.com
 Created: 3/22/2026
-Last modified: 3/22/2026
+Last modified: 
+  4/8/2026 - added inverted index and idf tables
 */
+
+DROP TABLE IF EXISTS term_idf;
+DROP TABLE IF EXISTS inverted_index;
+
+CREATE TABLE term_idf (
+  term TEXT PRIMARY KEY,
+  idf REAL,
+  df INTEGER
+);
+
+CREATE TABLE inverted_index (
+  term TEXT,
+  docid INTEGER,
+  tf INTEGER,
+  PRIMARY KEY (term, docid)
+);
 
 DROP TABLE IF EXISTS user;
 DROP TABLE IF EXISTS post;
