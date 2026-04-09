@@ -4,21 +4,22 @@ Description: create a post page form
 Authors: Brinley Hull & Anakha Krishna
 Other sources: Flask tutorial flask.com
 Created: 3/22/2026
-Last modified: 3/22/2026
+Last modified: 
+  4/9/2026 - Update to document formatting
 -->
 
 {% extends 'base.html' %}
 
 {% block header %}
-  <h1>{% block title %}New Post{% endblock %}</h1>
+  <h1>{% block title %}New Doc{% endblock %}</h1>
 {% endblock %}
 
 {% block content %}
   <form method="post">
     <label for="title">Title</label>
     <input name="title" id="title" value="{{ request.form['title'] }}" required>
-    <label for="body">Body</label>
-    <textarea name="body" id="body">{{ request.form['body'] }}</textarea>
+    <label for="content">Content</label>
+    <textarea name="content" id="content">{{ request.form['content'] }}</textarea>
     <input type="submit" value="Save">
   </form>
 {% endblock %}

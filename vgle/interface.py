@@ -6,6 +6,7 @@ Other sources: Flask tutorial flask.com
 Created: 3/22/2026
 Last modified: 
     4/1/2026 - Query writes to file
+    4/9/2026 - Show docs from database
 '''
 
 from flask import (
@@ -29,22 +30,19 @@ def index():
 
     # access database
     db = get_db()
-    posts = db.execute(
-        'SELECT p.id, title, body, created, author_id, username'
-        ' FROM post p JOIN user u ON p.author_id = u.id'
-        ' ORDER BY created DESC'
+    docs = db.execute(
+        'SELECT *'
+        ' FROM docs d' # will need to update this for ranking,idf
     ).fetchall()
 
-    return render_template('interface/index.html', posts=posts)
-
-
+    return render_template('interface/index.html', docs=docs)
 
 @bp.route('/create', methods=('GET', 'POST'))
 @login_required
 def create():
     if request.method == 'POST':
         title = request.form['title']
-        body = request.form['body']
+        content = request.form['content']
         error = None
 
         if not title:
@@ -55,9 +53,9 @@ def create():
         else:
             db = get_db()
             db.execute(
-                'INSERT INTO post (title, body, author_id)'
+                'INSERT INTO docs (title, content, author)'
                 ' VALUES (?, ?, ?)',
-                (title, body, g.user['id'])
+                (title, content, g.user['id'])
             )
             db.commit()
             return redirect(url_for('interface.index'))
