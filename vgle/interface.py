@@ -53,9 +53,9 @@ def create():
         else:
             db = get_db()
             db.execute(
-                'INSERT INTO docs (title, content, author)'
-                ' VALUES (?, ?, ?)',
-                (title, content, g.user['id'])
+                'INSERT INTO docs (title, content, author, url)'
+                ' VALUES (?, ?, ?, ?)',
+                (title, content, g.user['id'], "https://www.youtube.com/watch?v=dQw4w9WgXcQ")
             )
             db.commit()
             return redirect(url_for('interface.index'))
