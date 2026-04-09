@@ -1,10 +1,11 @@
 '''
-Name: test_blog.py
-Description: blog tests
+Name: test_interface.py
+Description: interface tests
 Authors: Brinley Hull & Anakha Krishna
 Other sources: Flask tutorial flask.com
 Created: 3/22/2026
-Last modified: 3/22/2026
+Last modified: 
+    4/8/2026 - Update from blog to query interface
 '''
 
 import pytest

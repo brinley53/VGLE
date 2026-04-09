@@ -6,15 +6,16 @@ Other sources: Flask tutorial flask.com
 Created: 3/22/2026
 Last modified: 
   4/1/2026 - Added search bar
+  4/9/2026 - Update posts to docs
 -->
 
 {% extends 'base.html' %}
 
 {% block header %}
   <h1>{% block title %}Search{% endblock %}</h1>
-  <!-- {% if g.user %}
+  {% if g.user %}
     <a class="action" href="{{ url_for('interface.create') }}">New</a>
-  {% endif %} -->
+  {% endif %}
 {% endblock %}
 
 {% block content %}
@@ -22,21 +23,21 @@ Last modified:
     <input type="text" id="search" name="search">
     <input type="submit" value="Search">
   </form>
-  <!-- {% for post in posts %}
-    <article class="post">
+  {% for doc in docs %}
+    <article class="doc">
       <header>
         <div>
-          <h1>{{ post['title'] }}</h1>
-          <div class="about">by {{ post['username'] }} on {{ post['created'].strftime('%Y-%m-%d') }}</div>
+          <a href="{{ doc['url'] }}"><h1>{{ doc['title'] }}</h1></a>
+          <div class="about">by {{ doc['author'] }}</div>
         </div>
-        {% if g.user['id'] == post['author_id'] %}
-          <a class="action" href="{{ url_for('interface.update', id=post['id']) }}">Edit</a>
+        {% if g.user['id'] == doc['author'] %}
+          <a class="action" href="{{ url_for('interface.update', id=doc['docid']) }}">Edit</a>
         {% endif %}
       </header>
-      <p class="body">{{ post['body'] }}</p>
+      <p class="body">{{ doc['content'] }}</p>
     </article>
     {% if not loop.last %}
       <hr>
     {% endif %}
-  {% endfor %} -->
+  {% endfor %}
 {% endblock %}

@@ -1,8 +1,8 @@
 ## Run application
-1. Activate virtual environment by running the following command in terminal from project folder:
+1. Activate virtual environment by running the following command in terminal from project folder: <br>
 . .venv/bin/activate
 
-2. Next, run the following command: 
+2. Next, run the following command: <br>
 flask --app vgle run --debug
 
 3. Visit website:
@@ -15,6 +15,9 @@ https://flask.palletsprojects.com/en/stable/tutorial/
 To see changes, refresh browser page; if changes do not show, clear browser cache
 
 ## Testing
-Run pytest command in terminal. To see test code coverage, run:
-coverage run -m pytest
+Run pytest command in terminal. To see test code coverage, run: <br>
+coverage run -m pytest <br>
 coverage report
+
+# Initializing Database (running schema script)
+Run flask --app vgle init-db
