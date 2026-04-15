@@ -7,6 +7,7 @@ Created: 3/22/2026
 Last modified: 
   4/8/2026 - added inverted index and idf tables
   4/9/2026 - added table for documents/urls
+  4/15/2026 - temporarily allow url non unique
 */
 
 DROP TABLE IF EXISTS term_idf;
@@ -15,7 +16,7 @@ DROP TABLE IF EXISTS docs;
 
 CREATE TABLE docs (
   docid INTEGER PRIMARY KEY AUTOINCREMENT,
-  url TEXT UNIQUE,
+  url TEXT, /*UNIQUE*/
   author TEXT,
   title TEXT,
   content TEXT

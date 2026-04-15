@@ -7,10 +7,11 @@ Created: 3/22/2026
 Last modified: 
     4/1/2026 - Query writes to file
     4/9/2026 - Show docs from database
+    4/15/2026 - Make new inverted index with every post (temp)
 '''
 
 from flask import (
-    Blueprint, flash, g, redirect, render_template, request, url_for
+    Blueprint, app, flash, g, redirect, render_template, request, url_for
 )
 from werkzeug.exceptions import abort
 
@@ -23,10 +24,22 @@ bp = Blueprint('interface', __name__)
 def index():
     if request.method == 'POST': # if search query is submitted
         query = request.form['search'] # get search query from form
+        query = query.split(" ") # split into list of words
+        # preprocessing
+        stopwords = []
+        processed_query = []
+
+        for term in query:
+            term = term.lower() # convert to lowercase
+            term = ''.join(ch for ch in term if ch.isalnum()) # remove punctuation (only keep characters that are alpha numeric)
+            if term in stopwords: # skip stopwords
+                continue
+
+            processed_query.append(term)
     
         # save query to file
         with open('vgle/query.txt', 'w') as query_file: # w erases previous results
-            query_file.write(query)
+            query_file.write(" ".join(processed_query))
 
     # access database
     db = get_db()
@@ -58,6 +71,8 @@ def create():
                 (title, content, g.user['id'], "https://www.youtube.com/watch?v=dQw4w9WgXcQ")
             )
             db.commit()
+            from . import inverted_index
+            inverted_index.create_index()
             return redirect(url_for('interface.index'))
 
     return render_template('interface/create.html')

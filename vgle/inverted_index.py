@@ -5,47 +5,61 @@ Authors: Brinley Hull & Anakha Krishna
 Created: 4/2/2026
 Last modified: 
     4/8/2026 - send information to database, create idf tables and document vectors
+    4/15/2026 - change document retrieval from folder/files to database
 '''
 
-import os
 import math
 from vgle.db import get_db
 from vgle.db import init_db
-from flask import current_app
 
 def create_index():
-    init_db() # initialize database to create tables for inverted index and idf values
+    db = get_db()
 
-    docs = []
-    doc_path = os.path.join(current_app.root_path, "docs")
     stopwords = [] # list of stopwords to ignore
 
-    db = get_db()
+    # temp recreate the tables for idf and inverted index
+    db.execute('DROP TABLE IF EXISTS term_idf;')
+    db.execute('DROP TABLE IF EXISTS inverted_index;')
+
+    db.execute('CREATE TABLE term_idf ('
+            'term TEXT PRIMARY KEY,'
+            'idf REAL,'
+            'df INTEGER'
+            ');')
+
+    db.execute('CREATE TABLE inverted_index ('
+            'term TEXT,'
+            'docid INTEGER,'
+            'tf INTEGER,'
+            'PRIMARY KEY (term, docid),'
+            'FOREIGN KEY (docid) REFERENCES docs (docid)'
+            ');')
 
     index = {} # initialize the inverted index as a dictionary
     # inverted index with term as key, value as another dict with key = docid, value = term freq
     # doc freq can be determined by checking the length of the dict
 
-    docid = 0 
-    for file in os.listdir(doc_path):
-        with open(os.path.join(doc_path, file), 'r', encoding='utf-8') as doc: #open doc
-            text = doc.read()
-            terms = text.split()
-        for term in terms: 
-            if term in stopwords: # skip stopwords
+    docs = db.execute('SELECT * FROM docs') # retrieve documents
+    
+    for doc in docs:
+        text = doc["content"].split()
+        for term in text: 
+            # preprocessing
+            term = term.lower() # convert to lowercase
+            term = ''.join(ch for ch in term if ch.isalnum()) # remove punctuation (only keep characters that are alpha numeric)
+            if term == "" or term in stopwords: # skip stopwords
                 continue
 
             if term not in index: # create entry for term if not already in index
                 index[term] = {}
 
-            if docid not in index[term]: # if doc is not yet counted for the term
-                index[term][docid] = 0
+            if doc["docid"] not in index[term]: # if doc is not yet counted for the term
+                index[term][doc["docid"]] = 0
         
-            index[term][docid] += 1 # add one to the term frequency for the doc
-        docid += 1 # increment the docid
+            index[term][doc["docid"]] += 1 # add one to the term frequency for the doc
 
     # calculate idf for each term in dictionary
-    N = docid # total number of documents
+    N = db.execute('SELECT COUNT(*) FROM docs').fetchone()[0] # total number of documents
 
     sorted_terms = sorted(index) # sort the terms alphabetically
     idf = {} # create dictionary for idf
