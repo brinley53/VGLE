@@ -8,6 +8,7 @@ Last modified:
     4/1/2026 - Query writes to file
     4/9/2026 - Show docs from database
     4/15/2026 - Make new inverted index with every post (temp)
+                Add unnormalized ranking based on tf x idf
 '''
 
 from flask import (
@@ -43,10 +44,23 @@ def index():
 
     # access database
     db = get_db()
-    docs = db.execute(
-        'SELECT *'
-        ' FROM docs d' # will need to update this for ranking,idf
-    ).fetchall()
+
+    if request.method == 'POST' and processed_query:
+        # ranked retrieval: score = sum(tf * idf) for matching query terms
+        placeholders = ', '.join(['?'] * len(processed_query)) # put placeholders for the SQL IN per query term
+        docs = db.execute(
+            'SELECT d.docid, d.url, d.author, d.title, d.content,'
+            '       SUM(ii.tf * ti.idf) AS score' # compute score
+            ' FROM docs d'
+            ' JOIN inverted_index ii ON d.docid = ii.docid' 
+            ' JOIN term_idf ti ON ii.term = ti.term'
+            ' WHERE ii.term IN (' + placeholders + ')' # put query terms into placeholders
+            ' GROUP BY d.docid, d.url, d.author, d.title, d.content'
+            ' ORDER BY score DESC',
+            processed_query
+        ).fetchall()
+    else:
+        docs = db.execute('SELECT * FROM docs d').fetchall()
 
     return render_template('interface/index.html', docs=docs)
 

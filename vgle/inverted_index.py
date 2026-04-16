@@ -6,6 +6,8 @@ Created: 4/2/2026
 Last modified: 
     4/8/2026 - send information to database, create idf tables and document vectors
     4/15/2026 - change document retrieval from folder/files to database
+    4/15/2026 - update/simplify document iteration to support non-consecutive docids and use 1-based incrementing instead of 0-based so that the last doc is not skipped
+                remove unused doc_vector calculation
 '''
 
 import math
@@ -63,7 +65,6 @@ def create_index():
 
     sorted_terms = sorted(index) # sort the terms alphabetically
     idf = {} # create dictionary for idf
-    doc_vectors = [[0 for i in range(len(index))] for j in range(N)] # create base idf values of 0 for every document. len(index) is the number of terms
 
     i = 0
     for term in sorted_terms: # go through words
@@ -78,16 +79,12 @@ def create_index():
         )
         
         # create document vectors
-        for doc_index in range(N): # cycle through documents
-            if doc_index in index[term]: # if the doc has the term
-                tf = index[term][doc_index] # term freq in document
-                doc_vectors[doc_index][i] = idf[term] * tf
-
+        for actual_docid, tf in index[term].items(): # iterate through every document that has the current term. "actual_docid" to be safe for naming collisions
                 # insert into database
                 db.execute(
                     'INSERT INTO inverted_index (term, docid, tf)'
                     ' VALUES (?, ?, ?)',
-                    (term, doc_index, tf)
+                    (term, actual_docid, tf)
                 )
         i += 1
 
