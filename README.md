@@ -21,3 +21,7 @@ coverage report
 
 # Initializing Database (running schema script)
 Run flask --app vgle init-db
+
+# Running Crawler
+Run python vgle/scraper.py <br>
+Run python vgle/inverted_index.py

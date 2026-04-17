@@ -8,34 +8,17 @@ Last modified:
     4/15/2026 - change document retrieval from folder/files to database
     4/15/2026 - update/simplify document iteration to support non-consecutive docids and use 1-based incrementing instead of 0-based so that the last doc is not skipped
                 remove unused doc_vector calculation
+    4/17/2026 - delete temporary database table creation
 '''
 
 import math
 from vgle.db import get_db
-from vgle.db import init_db
+from vgle import create_app
 
 def create_index():
     db = get_db()
 
     stopwords = [] # list of stopwords to ignore
-
-    # temp recreate the tables for idf and inverted index
-    db.execute('DROP TABLE IF EXISTS term_idf;')
-    db.execute('DROP TABLE IF EXISTS inverted_index;')
-
-    db.execute('CREATE TABLE term_idf ('
-            'term TEXT PRIMARY KEY,'
-            'idf REAL,'
-            'df INTEGER'
-            ');')
-
-    db.execute('CREATE TABLE inverted_index ('
-            'term TEXT,'
-            'docid INTEGER,'
-            'tf INTEGER,'
-            'PRIMARY KEY (term, docid),'
-            'FOREIGN KEY (docid) REFERENCES docs (docid)'
-            ');')
 
     index = {} # initialize the inverted index as a dictionary
     # inverted index with term as key, value as another dict with key = docid, value = term freq
@@ -90,3 +73,8 @@ def create_index():
 
     # send inverted index and idf values to database
     db.commit()
+
+if __name__ == "__main__":
+    app = create_app()
+    with app.app_context():
+        create_index()

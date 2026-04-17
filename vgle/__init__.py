@@ -7,6 +7,7 @@ Created: 3/22/2026
 Last modified: 
     4/1/2026 - Update from blog to query interface
     4/8/2026 - call create_index function to create inverted index and idf tables
+    4/17/2026 - don't automatically create inverted index
 '''
 
 import os
@@ -46,9 +47,13 @@ def create_app(test_config=None):
     from . import interface
     app.register_blueprint(interface.bp)
     app.add_url_rule('/', endpoint='index')
+
+    # from . import scraper 
+    # with app.app_context():
+    #     scraper.crawl()
     
-    from . import inverted_index
-    with app.app_context():
-        inverted_index.create_index()
+    # from . import inverted_index
+    # with app.app_context():
+    #     inverted_index.create_index()
 
     return app
