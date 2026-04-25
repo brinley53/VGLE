@@ -99,3 +99,8 @@ def create_index():
         )
 
     db.commit()
+
+if __name__ == "__main__":
+    app = create_app()
+    with app.app_context():
+        create_index()
