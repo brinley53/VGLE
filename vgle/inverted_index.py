@@ -8,34 +8,28 @@ Last modified:
     4/15/2026 - change document retrieval from folder/files to database
     4/15/2026 - update/simplify document iteration to support non-consecutive docids and use 1-based incrementing instead of 0-based so that the last doc is not skipped
                 remove unused doc_vector calculation
+    4/17/2026 - delete temporary database table creation
+    4/24/2026 - calculate cosine similarity for documents
 '''
 
 import math
 from vgle.db import get_db
-from vgle.db import init_db
+from vgle import create_app
 
 def create_index():
     db = get_db()
 
+    # make sure docs table exists before indexing. can remove later maybe? 
+    if not db.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='docs'").fetchone():
+        return
+    
+    # uncomment this and run init-db if you're having trouble with the new doc_norm column. then you can delete this
+    # try:
+    #     db.execute('ALTER TABLE docs ADD COLUMN doc_norm REAL')
+    # except Exception:
+    #     pass # col already exists
+
     stopwords = [] # list of stopwords to ignore
-
-    # temp recreate the tables for idf and inverted index
-    db.execute('DROP TABLE IF EXISTS term_idf;')
-    db.execute('DROP TABLE IF EXISTS inverted_index;')
-
-    db.execute('CREATE TABLE term_idf ('
-            'term TEXT PRIMARY KEY,'
-            'idf REAL,'
-            'df INTEGER'
-            ');')
-
-    db.execute('CREATE TABLE inverted_index ('
-            'term TEXT,'
-            'docid INTEGER,'
-            'tf INTEGER,'
-            'PRIMARY KEY (term, docid),'
-            'FOREIGN KEY (docid) REFERENCES docs (docid)'
-            ');')
 
     index = {} # initialize the inverted index as a dictionary
     # inverted index with term as key, value as another dict with key = docid, value = term freq
@@ -88,5 +82,25 @@ def create_index():
                 )
         i += 1
 
-    # send inverted index and idf values to database
+    # compute document norms for cosine sim: |d| = sqrt(SUM((tf * idf)^2))
+    doc_norm_accumulator = {}
+    for term in index:
+        term_idf_val = idf[term]
+        for docid, tf in index[term].items():
+            weight = tf * term_idf_val
+            if docid not in doc_norm_accumulator:
+                doc_norm_accumulator[docid] = 0.0
+            doc_norm_accumulator[docid] += weight * weight
+
+    for docid, sum_sq in doc_norm_accumulator.items():
+        db.execute(
+            'UPDATE docs SET doc_norm = ? WHERE docid = ?',
+            (math.sqrt(sum_sq), docid)
+        )
+
     db.commit()
+
+if __name__ == "__main__":
+    app = create_app()
+    with app.app_context():
+        create_index()

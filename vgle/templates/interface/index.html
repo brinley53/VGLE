@@ -7,6 +7,7 @@ Created: 3/22/2026
 Last modified: 
   4/1/2026 - Added search bar
   4/9/2026 - Update posts to docs
+  4/17/2026 - Truncate description
 -->
 
 {% extends 'base.html' %}
@@ -34,7 +35,7 @@ Last modified:
           <a class="action" href="{{ url_for('interface.update', id=doc['docid']) }}">Edit</a>
         {% endif %}
       </header>
-      <p class="body">{{ doc['content'] }}</p>
+      <p class="body">{{ doc['content'][:200] }}...</p>
     </article>
     {% if not loop.last %}
       <hr>
