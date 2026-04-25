@@ -8,6 +8,7 @@ Last modified:
   4/8/2026 - added inverted index and idf tables
   4/9/2026 - added table for documents/urls
   4/15/2026 - temporarily allow url non unique
+  4/23/2026 - add doc_norm to docs table
 */
 
 DROP TABLE IF EXISTS term_idf;
@@ -19,7 +20,8 @@ CREATE TABLE docs (
   url TEXT, /*UNIQUE*/
   author TEXT,
   title TEXT,
-  content TEXT
+  content TEXT,
+  doc_norm REAL
 );
 
 CREATE TABLE term_idf (
