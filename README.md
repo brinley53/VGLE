@@ -16,12 +16,19 @@ To see changes, refresh browser page; if changes do not show, clear browser cach
 
 ## Testing
 Run pytest command in terminal. To see test code coverage, run: <br>
-coverage run -m pytest <br>
+
+```shell
+coverage run -m pytest
 coverage report
+```
 
 # Initializing Database (running schema script)
-Run flask --app vgle init-db
+```shell
+flask --app vgle init-db
+```
 
 # Running Crawler
-Run python vgle/scraper.py <br>
-Run python vgle/inverted_index.py
+```shell
+python vgle/scraper.py
+python vgle/inverted_index.py
+```
