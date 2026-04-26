@@ -8,6 +8,7 @@ Last modified:
     4/1/2026 - Update from blog to query interface
     4/8/2026 - call create_index function to create inverted index and idf tables
     4/17/2026 - don't automatically create inverted index
+    4/26/2026 - Delete unnecessary tutorial pages
 '''
 
 import os
@@ -32,17 +33,9 @@ def create_app(test_config=None):
 
     # ensure the instance folder exists
     os.makedirs(app.instance_path, exist_ok=True)
-
-    # a simple page that says hello
-    @app.route('/hello')
-    def hello():
-        return 'Hello, World!'
     
     from . import db
     db.init_app(app)
-    
-    from . import auth
-    app.register_blueprint(auth.bp)
 
     from . import interface
     app.register_blueprint(interface.bp)

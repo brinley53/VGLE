@@ -8,6 +8,7 @@ Last modified:
     4/13/2026 - add url parsing functionality
     4/17/2026 - basic web crawling with robots.txt
     4/24/2026 - politeness, distribute crawlers, robots efficiency
+    4/26/2026 - filter some junk pages, dynamic robots for pages outside host
 '''
 
 from urllib.parse import urljoin, urlparse
@@ -24,7 +25,8 @@ import time
 import sqlite3
 
 min_access_time = 0.1 # politeness for hosts
-start_urls = ["https://www.ign.com/", "https://en.wikipedia.org/wiki/Lists_of_video_games"]
+start_urls = ["https://store.steampowered.com", "https://www.ign.com/", "https://en.wikipedia.org/wiki/Lists_of_video_games"]
+keywords = ["gam", "play"]
 
 # get robots.txt
 def get_robots(url):
@@ -40,6 +42,10 @@ def get_robots(url):
 
     return rp
 
+def get_base_url(url):
+    parsed = urlparse(url)
+    return f"{parsed.scheme}://{parsed.netloc}"
+
 def crawl(host):
     db = sqlite3.connect("instance/vsgl.sqlite", check_same_thread=False, timeout=10) # connect to database
     headers = {
@@ -47,32 +53,50 @@ def crawl(host):
     } # set user agent to identify our crawler (important for robots.txt)
     queue = [host]
     visited = set()
-    robots = get_robots(host)
+    robots = {}
+    robots[host] = get_robots(host)
+
+    junk_pages = ["login", "signup", "register", "account", "profile", "settings", "privacy", "terms", "contact", "support",
+                  "special:", "talk:", "user:", "help:", "wikipedia:", "about", "#", "?", "portal:", "%"] # pages we don't want to crawl
     
     while len(queue) > 0: # crawl until queue is empty
         url = queue.pop(0) # get first url
         visited.add(url) # mark url
+        base_url = get_base_url(url)
+
+        # get relevant robots.txt
+        if base_url not in robots:
+            robots[base_url] = get_robots(base_url)
+
+        robot = robots[base_url]
 
         page = requests.get(url, headers=headers) # get content of webpage
 
         if page.status_code != 200: # check for successful response
             continue
 
-        if not robots.can_fetch("*", url): # robots.txt: can we look at this page?
-            print("hello")
+        if not robot.can_fetch("*", url): # robots.txt: can we look at this page?
             continue 
 
         if not (url.startswith("http://") or url.startswith("https://")): # check for valid url
             continue
 
+        if any(junk in url.lower() for junk in junk_pages): # get rid of junk pages (like login)
+            continue
+
         soup = BeautifulSoup(page.content, "html.parser") # html parser
 
+        # partial word matching to find relevant pages
+        text = soup.get_text().lower()
+        if not any(word in text for word in keywords):
+            continue
         # if we're not allowed to index this page, skip it
         # robots_tag = soup.find("meta", attrs={"name": "robots"})
         # if robots_tag:
         #     print("hi")
         #     if "noindex" in robots_tag.get("content", "").lower():
         #         continue
+
 
         # get all urls from page
         for a in soup.find_all("a", href=True): # find a ref (linked html object)
@@ -81,7 +105,11 @@ def crawl(host):
                 queue.append(ref_url)
 
         # get metadata
-        title = soup.title.string # get title
+        title = soup.title
+        if title:
+            title = title.string # get title
+        else:
+            title = "Untitled"
         author = "placeholder"
 
         #get content
@@ -103,8 +131,7 @@ def crawl(host):
         time.sleep(min_access_time) # politeness for each host
 
 def multi_crawl():
-    # "https://store.steampowered.com", 
-    #     # don't work: "https://www.igdb.com/"] #"https://www.fandom.com/"] "https://www.mobygames.com/"
+    #  don't work: "https://www.igdb.com/"] #"https://www.fandom.com/"] "https://www.mobygames.com/"
 
     # code from docs.python.org threading.html tutorial
     # crawl with multiple threads
@@ -121,32 +148,7 @@ def multi_crawl():
     for t in threads:
         t.join()
 
-    
-        
-    # ALSO NEED TO ACCOUNT FOR JS
-
-    #print(page.text)
-
-
-
-    # results = soup.find(id="ResultsContainer")
-# python_jobs = results.find_all(
-#     "h2", string=lambda text: "python" in text.lower()
-# )
 if __name__ == "__main__":
     app = create_app()
     with app.app_context():
         multi_crawl()
-# python_job_cards = [
-#     h2_element.parent.parent.parent for h2_element in python_jobs
-# ]
-
-# for job_card in python_job_cards:
-#     title_element = job_card.find("h2", class_="title")
-#     company_element = job_card.find("h3", class_="company")
-#     location_element = job_card.find("p", class_="location")
-#     print(title_element.text.strip())
-#     print(company_element.text.strip())
-#     print(location_element.text.strip())
-#     link_url = job_card.find_all("a")[1]["href"]
-#     print(f"Apply here: {link_url}\n")
