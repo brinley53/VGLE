@@ -8,6 +8,7 @@ Last modified:
   4/1/2026 - Added search bar
   4/9/2026 - Update posts to docs
   4/17/2026 - Truncate description
+  4/26/2026 - Delete blog logic
 -->
 
 {% extends 'base.html' %}
@@ -31,9 +32,6 @@ Last modified:
           <a href="{{ doc['url'] }}"><h1>{{ doc['title'] }}</h1></a>
           <div class="about">by {{ doc['author'] }}</div>
         </div>
-        {% if g.user['id'] == doc['author'] %}
-          <a class="action" href="{{ url_for('interface.update', id=doc['docid']) }}">Edit</a>
-        {% endif %}
       </header>
       <p class="body">{{ doc['content'][:200] }}...</p>
     </article>

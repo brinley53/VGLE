@@ -10,6 +10,7 @@ Last modified:
   4/15/2026 - temporarily allow url non unique
   4/23/2026 - add doc_norm to docs table
   4/24/2026 - urls unique again
+  4/26/2026 - Delete tutorial tables
 */
 
 DROP TABLE IF EXISTS term_idf;
@@ -37,22 +38,4 @@ CREATE TABLE inverted_index (
   tf INTEGER,
   PRIMARY KEY (term, docid),
   FOREIGN KEY (docid) REFERENCES docs (docid)
-);
-
-DROP TABLE IF EXISTS user;
-DROP TABLE IF EXISTS post;
-
-CREATE TABLE user (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  username TEXT UNIQUE NOT NULL,
-  password TEXT NOT NULL
-);
-
-CREATE TABLE post (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  author_id INTEGER NOT NULL,
-  created TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  title TEXT NOT NULL,
-  body TEXT NOT NULL,
-  FOREIGN KEY (author_id) REFERENCES user (id)
 );
