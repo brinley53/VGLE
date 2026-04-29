@@ -30,8 +30,7 @@ min_access_time = 0.1 # politeness for hosts
     #  don't work: "https://www.igdb.com/"] #"https://www.fandom.com/"] "https://www.mobygames.com/"
 start_urls = [ "https://howlongtobeat.com", "https://steamcommunity.com", "https://www.rockpapershotgun.com", "https://store.steampowered.com", 
               "https://www.ign.com",  "https://mapgenie.io", "https://maxroll.gg", "https://www.vg247.com", 
-              "https://eurogamer.net", "https://planetpokemon.com", "https://www.pushsquare.com",
-              "https://www.nintendo.com"] # "https://en.wikipedia.org/wiki/Lists_of_video_games" 
+              "https://eurogamer.net", "https://planetpokemon.com", "https://www.pushsquare.com"] # "https://en.wikipedia.org/wiki/Lists_of_video_games" 
 keywords = [ "game", "gaming", "play", "level", "character", "quest", "multiplayer", "singleplayer", 
             "open world", "rpg", "fps", "adventure", "puzzle", "platformer"] # partial word matching for relevant pages
 
