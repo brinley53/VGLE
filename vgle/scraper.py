@@ -9,11 +9,13 @@ Last modified:
     4/17/2026 - basic web crawling with robots.txt
     4/24/2026 - politeness, distribute crawlers, robots efficiency
     4/26/2026 - filter some junk pages, dynamic robots for pages outside host
+    4/28/2026 - real author, dedup
 '''
 
-from urllib.parse import urljoin, urlparse
+from urllib.parse import urljoin, urlparse, urlsplit, urlunsplit
 import urllib.robotparser
 
+import certifi
 import requests
 from bs4 import BeautifulSoup
 
@@ -25,8 +27,14 @@ import time
 import sqlite3
 
 min_access_time = 0.1 # politeness for hosts
-start_urls = ["https://store.steampowered.com", "https://www.ign.com/", "https://en.wikipedia.org/wiki/Lists_of_video_games"]
-keywords = ["gam", "play"]
+    #  don't work: "https://www.igdb.com/"] #"https://www.fandom.com/"] "https://www.mobygames.com/"
+start_urls = [ "https://howlongtobeat.com", "https://steamcommunity.com", "https://www.rockpapershotgun.com", "https://store.steampowered.com", 
+              "https://www.ign.com",  "https://mapgenie.io", "https://maxroll.gg", "https://www.vg247.com", 
+              "https://eurogamer.net", "https://planetpokemon.com", "https://www.pushsquare.com"] # "https://en.wikipedia.org/wiki/Lists_of_video_games" 
+keywords = [ "game", "gaming", "play", "level", "character", "quest", "multiplayer", "singleplayer", 
+            "open world", "rpg", "fps", "adventure", "puzzle", "platformer"] # partial word matching for relevant pages
+
+visited = set()
 
 # get robots.txt
 def get_robots(url):
@@ -42,35 +50,62 @@ def get_robots(url):
 
     return rp
 
+def normalize_url(url):
+    parts = urlsplit(url)
+
+    # remove trailing slash
+    path = parts.path.rstrip("/")
+
+    # rebuild clean URL
+    return urlunsplit((
+        parts.scheme,
+        parts.netloc,
+        path,
+        "",  # remove query if you want stricter dedup
+        ""
+    ))
+
 def get_base_url(url):
     parsed = urlparse(url)
     return f"{parsed.scheme}://{parsed.netloc}"
 
 def crawl(host):
     db = sqlite3.connect("instance/vsgl.sqlite", check_same_thread=False, timeout=10) # connect to database
+    db_lock = threading.Lock()
     headers = {
         "User-Agent": "VGLE/1.0"
     } # set user agent to identify our crawler (important for robots.txt)
     queue = [host]
-    visited = set()
     robots = {}
     robots[host] = get_robots(host)
 
     junk_pages = ["login", "signup", "register", "account", "profile", "settings", "privacy", "terms", "contact", "support",
-                  "special:", "talk:", "user:", "help:", "wikipedia:", "about", "#", "?", "portal:", "%"] # pages we don't want to crawl
+                  "refund", "subscribe", "zip", "apk", "id", "subscriber", "special:", "talk:", "playlist", "user:", "help", 
+                  "wikipedia:", "about", "#", "?", "portal:", "%", "join", "my", "ziffdavis", "github", "flathub"] # pages we don't want to crawl
     
     while len(queue) > 0: # crawl until queue is empty
         url = queue.pop(0) # get first url
-        visited.add(url) # mark url
+        with db_lock:
+            if url in visited:
+                continue
+            visited.add(url) # mark url
         base_url = get_base_url(url)
+        # if base_url != host: # only crawl the specific host
+        #     continue
 
         # get relevant robots.txt
         if base_url not in robots:
-            robots[base_url] = get_robots(base_url)
-
+            try:
+                robots[base_url] = get_robots(base_url)
+            except Exception as e:
+                continue 
+    
         robot = robots[base_url]
 
-        page = requests.get(url, headers=headers) # get content of webpage
+        try:
+            page = requests.get(url, timeout=5, headers=headers, verify=certifi.where()) # get content of webpage
+        except Exception as e:
+            continue
 
         if page.status_code != 200: # check for successful response
             continue
@@ -90,27 +125,24 @@ def crawl(host):
         text = soup.get_text().lower()
         if not any(word in text for word in keywords):
             continue
-        # if we're not allowed to index this page, skip it
-        # robots_tag = soup.find("meta", attrs={"name": "robots"})
-        # if robots_tag:
-        #     print("hi")
-        #     if "noindex" in robots_tag.get("content", "").lower():
-        #         continue
-
-
-        # get all urls from page
-        for a in soup.find_all("a", href=True): # find a ref (linked html object)
-            ref_url = urljoin(url, a["href"])
-            if ref_url not in visited: # duplicate url elimination
-                queue.append(ref_url)
 
         # get metadata
         title = soup.title
         if title:
             title = title.string # get title
         else:
-            title = "Untitled"
-        author = "placeholder"
+            continue
+        author = soup.find("meta", property="og:site_name") # get author meta tag
+        if author:
+            author = author["content"] # get author content
+        else:
+            author = title
+
+        # get all urls from page
+        for a in soup.find_all("a", href=True): # find a ref (linked html object)
+            ref_url = urljoin(url, a["href"])
+            if normalize_url(ref_url) not in visited: # duplicate url elimination
+                queue.append(ref_url)
 
         #get content
         boo_tags = ["script", "style", "footer", "header", "nav"]
@@ -120,19 +152,19 @@ def crawl(host):
         content = soup.get_text(separator=" ").strip()
 
         # insert into database
-        db.execute(
-            'INSERT OR IGNORE INTO docs (url, title, author, content)' # ignore ignores duplicates
-            ' VALUES (?, ?, ?, ?)',
-            (url, title, author, content)
-        )
+        with db_lock: # so multiple threads don't write to database at the same time
+            db.execute(
+                'INSERT OR IGNORE INTO docs (url, title, author, content)' # ignore ignores duplicates
+                ' VALUES (?, ?, ?, ?)',
+                (url, title, author, content)
+            )
 
         db.commit()
 
         time.sleep(min_access_time) # politeness for each host
+    print(f"Finished crawling {host}")
 
 def multi_crawl():
-    #  don't work: "https://www.igdb.com/"] #"https://www.fandom.com/"] "https://www.mobygames.com/"
-
     # code from docs.python.org threading.html tutorial
     # crawl with multiple threads
     threads = []
