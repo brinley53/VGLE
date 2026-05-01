@@ -10,26 +10,37 @@ Last modified:
                 remove unused doc_vector calculation
     4/17/2026 - delete temporary database table creation
     4/24/2026 - calculate cosine similarity for documents
+    4/30/2026 - add some stopwords
 '''
 
 import math
 from vgle.db import get_db
 from vgle import create_app
 
+STOPWORDS = {
+    "a", "an", "the", "and", "or", "but", "in", "on", "at", "to", "for",
+    "of", "with", "by", "from", "is", "was", "are", "were", "be", "been",
+    "has", "have", "had", "do", "does", "did", "will", "would", "could",
+    "should", "may", "might", "shall", "can", "not", "no", "nor", "so",
+    "yet", "as", "if", "then", "than", "that", "this", "these", "those",
+    "it", "its", "they", "their", "them", "we", "our", "you", "your",
+    "i", "my", "he", "she", "his", "her", "who", "which", "what", "how",
+    "when", "where", "about", "out", "up", "all", "each", "more", "most",
+    "other", "some", "only", "same", "also", "any", "many", "just",
+}
+
 def create_index():
     db = get_db()
 
-    # make sure docs table exists before indexing. can remove later maybe? 
+    # make sure docs table exists before indexing. can remove later maybe?
     if not db.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='docs'").fetchone():
         return
-    
+
     # uncomment this and run init-db if you're having trouble with the new doc_norm column. then you can delete this
     # try:
     #     db.execute('ALTER TABLE docs ADD COLUMN doc_norm REAL')
     # except Exception:
     #     pass # col already exists
-
-    stopwords = [] # list of stopwords to ignore
 
     index = {} # initialize the inverted index as a dictionary
     # inverted index with term as key, value as another dict with key = docid, value = term freq
@@ -43,7 +54,7 @@ def create_index():
             # preprocessing
             term = term.lower() # convert to lowercase
             term = ''.join(ch for ch in term if ch.isalnum()) # remove punctuation (only keep characters that are alpha numeric)
-            if term == "" or term in stopwords: # skip stopwords
+            if term == "" or term in STOPWORDS: # skip stopwords
                 continue
 
             if term not in index: # create entry for term if not already in index
