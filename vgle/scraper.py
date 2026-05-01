@@ -10,6 +10,7 @@ Last modified:
     4/24/2026 - politeness, distribute crawlers, robots efficiency
     4/26/2026 - filter some junk pages, dynamic robots for pages outside host
     4/28/2026 - real author, dedup
+    5/1/2026 - populate links table for HITS
 '''
 
 from urllib.parse import urljoin, urlparse, urlsplit, urlunsplit
@@ -139,10 +140,14 @@ def crawl(host):
             author = title
 
         # get all urls from page
+        outlink_urls = []
         for a in soup.find_all("a", href=True): # find a ref (linked html object)
             ref_url = urljoin(url, a["href"])
-            if normalize_url(ref_url) not in visited: # duplicate url elimination
+            norm_ref = normalize_url(ref_url)
+            if norm_ref not in visited: # duplicate url elimination
                 queue.append(ref_url)
+            outlink_urls.append(norm_ref)
+        outlink_urls = list(set(outlink_urls))  # deduplicate outlinks for this page
 
         #get content
         boo_tags = ["script", "style", "footer", "header", "nav"]
@@ -160,6 +165,25 @@ def crawl(host):
             )
 
         db.commit()
+
+        # put outlinks into links table for HITS computation
+        with db_lock:
+            src_row = db.execute(
+                'SELECT docid FROM docs WHERE url = ?', (url,)
+            ).fetchone()
+            if src_row:
+                src_docid = src_row[0]
+                for dst_url in outlink_urls:
+                    dst_row = db.execute(
+                        'SELECT docid FROM docs WHERE url = ?', (dst_url,)
+                    ).fetchone()
+                    if dst_row and dst_row[0] != src_docid:  # skip self-links
+                        db.execute(
+                            'INSERT OR IGNORE INTO links (src_docid, dst_docid)'
+                            ' VALUES (?, ?)',
+                            (src_docid, dst_row[0])
+                        )
+                db.commit()
 
         time.sleep(min_access_time) # politeness for each host
     print(f"Finished crawling {host}")

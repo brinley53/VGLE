@@ -11,6 +11,8 @@ Last modified:
                 Add unnormalized ranking based on tf x idf
     4/24/2026 - query normalization and retrieval based on cosine similarity
     4/26/2026 - Blank page with no query, delete tutorial pages
+    4/30/2026 - integrate stopwords
+    5/1/2026 - factor in HITS for ranking
 '''
 
 import math
@@ -21,6 +23,7 @@ from flask import (
 from werkzeug.exceptions import abort
 
 from vgle.db import get_db
+from vgle.inverted_index import STOPWORDS
 
 bp = Blueprint('interface', __name__)
 
@@ -30,13 +33,12 @@ def index():
         query = request.form['search'] # get search query from form
         query = query.split(" ") # split into list of words
         # preprocessing
-        stopwords = []
         processed_query = []
 
         for term in query:
             term = term.lower() # convert to lowercase
             term = ''.join(ch for ch in term if ch.isalnum()) # remove punctuation (only keep characters that are alpha numeric)
-            if term in stopwords: # skip stopwords
+            if not term or term in STOPWORDS: # skip empty tokens and stopwords
                 continue
 
             processed_query.append(term)
@@ -64,37 +66,41 @@ def index():
         query_norm = math.sqrt(query_norm)
 
         if query_norm == 0.0:
-            # if no query terms found in index --> return unranked list (make this into no results later)
-            docs = db.execute('SELECT * FROM docs d').fetchall()
+            docs = []  # no matching terms in index: return empty results
         else:
             # cosine similarity: dot(q,d) / (|q| * |d|)
             # dot product = SUM(tf * idf^2) to rewards rare terms --> w(t,q)=idf(t) for query and w(t,d)=tf(t,d)*idf(t) for doc
             placeholders = ', '.join(['?'] * len(unique_query_terms))
             raw_docs = db.execute(
                 'SELECT d.docid, d.url, d.author, d.title, d.content, d.doc_norm,'
+                '       d.authority_score,'
                 '       SUM(ii.tf * ti.idf * ti.idf) AS dot_product'
                 ' FROM docs d'
                 ' JOIN inverted_index ii ON d.docid = ii.docid'
                 ' JOIN term_idf ti ON ii.term = ti.term'
                 ' WHERE ii.term IN (' + placeholders + ')'
                 ' AND d.doc_norm IS NOT NULL AND d.doc_norm > 0'
-                ' GROUP BY d.docid, d.url, d.author, d.title, d.content, d.doc_norm'
+                ' GROUP BY d.docid, d.url, d.author, d.title, d.content, d.doc_norm, d.authority_score'
                 ' ORDER BY (dot_product / d.doc_norm) DESC',
                 unique_query_terms
             ).fetchall()
 
-            # divide by query_norm to get cosine similarity in [0, 1]
-            # copy everything over to a dictionary and do calculations since we don't store anything about query in db
+            # combine cosine similarity (query-dependent) with HITS score (query-independent)
+            # ALPHA = trade-off: higher = more weight on textual relevance
+            ALPHA = 0.85
             docs = []
             for row in raw_docs:
+                cosine_sim = row['dot_product'] / (row['doc_norm'] * query_norm)
+                authority  = row['authority_score'] if row['authority_score'] is not None else 0.0
                 docs.append({
-                    'docid': row['docid'],
-                    'url': row['url'],
-                    'author': row['author'],
-                    'title': row['title'],
+                    'docid':   row['docid'],
+                    'url':     row['url'],
+                    'author':  row['author'],
+                    'title':   row['title'],
                     'content': row['content'],
-                    'score': row['dot_product'] / (row['doc_norm'] * query_norm)
+                    'score':   ALPHA * cosine_sim + (1.0 - ALPHA) * authority
                 })
+            docs.sort(key=lambda d: d['score'], reverse=True) # fancy way to order by score (descending)
     else:
         docs = []
 
