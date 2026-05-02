@@ -11,6 +11,7 @@ Last modified:
     4/26/2026 - filter some junk pages, dynamic robots for pages outside host
     4/28/2026 - real author, dedup
     5/1/2026 - populate links table for HITS
+               depth limit for crawler
 '''
 
 from urllib.parse import urljoin, urlparse, urlsplit, urlunsplit
@@ -20,18 +21,18 @@ import certifi
 import requests
 from bs4 import BeautifulSoup
 
-from vgle.db import get_db
 from vgle import create_app
 
 import threading
 import time
 import sqlite3
 
+import sys
+
 min_access_time = 0.1 # politeness for hosts
     #  don't work: "https://www.igdb.com/"] #"https://www.fandom.com/"] "https://www.mobygames.com/"
-start_urls = [ "https://howlongtobeat.com", "https://steamcommunity.com", "https://www.rockpapershotgun.com", "https://store.steampowered.com", 
-              "https://www.ign.com",  "https://mapgenie.io", "https://maxroll.gg", "https://www.vg247.com", 
-              "https://eurogamer.net", "https://planetpokemon.com", "https://www.pushsquare.com"] # "https://en.wikipedia.org/wiki/Lists_of_video_games" 
+start_urls = [ "https://howlongtobeat.com", "https://steamcommunity.com", "https://store.steampowered.com", 
+              "https://www.ign.com",  "https://mapgenie.io", "https://www.vg247.com", "https://eurogamer.net"] # "https://www.rockpapershotgun.com",  "https://en.wikipedia.org/wiki/Lists_of_video_games"  , "https://maxroll.gg",  "https://planetpokemon.com", "https://www.pushsquare.com"
 keywords = [ "game", "gaming", "play", "level", "character", "quest", "multiplayer", "singleplayer", 
             "open world", "rpg", "fps", "adventure", "puzzle", "platformer"] # partial word matching for relevant pages
 
@@ -70,9 +71,10 @@ def get_base_url(url):
     parsed = urlparse(url)
     return f"{parsed.scheme}://{parsed.netloc}"
 
-def crawl(host):
+def crawl(host, depth_limit=1000):
     db = sqlite3.connect("instance/vsgl.sqlite", check_same_thread=False, timeout=10) # connect to database
     db_lock = threading.Lock()
+    depth = 0
     headers = {
         "User-Agent": "VGLE/1.0"
     } # set user agent to identify our crawler (important for robots.txt)
@@ -84,7 +86,7 @@ def crawl(host):
                   "refund", "subscribe", "zip", "apk", "id", "subscriber", "special:", "talk:", "playlist", "user:", "help", 
                   "wikipedia:", "about", "#", "?", "portal:", "%", "join", "my", "ziffdavis", "github", "flathub"] # pages we don't want to crawl
     
-    while len(queue) > 0: # crawl until queue is empty
+    while len(queue) > 0 and depth < depth_limit: # crawl until queue is empty or we hit the depth limit
         url = queue.pop(0) # get first url
         with db_lock:
             if url in visited:
@@ -105,6 +107,7 @@ def crawl(host):
 
         try:
             page = requests.get(url, timeout=5, headers=headers, verify=certifi.where()) # get content of webpage
+            page.encoding = page.apparent_encoding # set encoding to apparent encoding to avoid issues with non-utf-8 pages
         except Exception as e:
             continue
 
@@ -164,10 +167,7 @@ def crawl(host):
                 (url, title, author, content)
             )
 
-        db.commit()
-
-        # put outlinks into links table for HITS computation
-        with db_lock:
+            # put outlinks into links table for HITS computation
             src_row = db.execute(
                 'SELECT docid FROM docs WHERE url = ?', (url,)
             ).fetchone()
@@ -183,17 +183,18 @@ def crawl(host):
                             ' VALUES (?, ?)',
                             (src_docid, dst_row[0])
                         )
-                db.commit()
+            db.commit()
 
+        depth += 1
         time.sleep(min_access_time) # politeness for each host
     print(f"Finished crawling {host}")
 
-def multi_crawl():
+def multi_crawl(depth_limit=1000):
     # code from docs.python.org threading.html tutorial
     # crawl with multiple threads
     threads = []
     for url in start_urls:
-        t = threading.Thread(target=crawl, args=(url,))
+        t = threading.Thread(target=crawl, args=(url, depth_limit))
         threads.append(t)
 
     # start each thread
@@ -207,4 +208,12 @@ def multi_crawl():
 if __name__ == "__main__":
     app = create_app()
     with app.app_context():
-        multi_crawl()
+        multi_crawl(depth_limit=int(sys.argv[1]) if len(sys.argv) > 1 else float('inf')) # run crawl, get depth limit from command line
+        print("Crawling complete")
+        # run inverted index and HITS after crawling is done
+        from vgle.inverted_index import create_index
+        create_index()
+        print("Inverted index built")
+        from vgle.hits import compute_hits
+        compute_hits()
+        print("HITS computed")
