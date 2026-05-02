@@ -11,7 +11,8 @@ Last modified:
     4/26/2026 - filter some junk pages, dynamic robots for pages outside host
     4/28/2026 - real author, dedup
     5/1/2026 - populate links table for HITS
-               depth limit for crawler
+               limit for crawler
+    5/2/2026 - add wikis to crawl list, catch errors
 '''
 
 from urllib.parse import urljoin, urlparse, urlsplit, urlunsplit
@@ -19,20 +20,23 @@ import urllib.robotparser
 
 import certifi
 import requests
-from bs4 import BeautifulSoup
+from bs4 import BeautifulSoup, XMLParsedAsHTMLWarning
 
 from vgle import create_app
 
 import threading
 import time
 import sqlite3
+import warnings
 
 import sys
 
 min_access_time = 0.1 # politeness for hosts
     #  don't work: "https://www.igdb.com/"] #"https://www.fandom.com/"] "https://www.mobygames.com/"
-start_urls = [ "https://howlongtobeat.com", "https://steamcommunity.com", "https://store.steampowered.com", 
-              "https://www.ign.com",  "https://mapgenie.io", "https://www.vg247.com", "https://eurogamer.net"] # "https://www.rockpapershotgun.com",  "https://en.wikipedia.org/wiki/Lists_of_video_games"  , "https://maxroll.gg",  "https://planetpokemon.com", "https://www.pushsquare.com"
+start_urls = ["https://powerwashsimulator.wiki.gg", "https://bendy.wiki.gg", "https://nookipedia.com/wiki", "https://dredge.wiki.gg", 
+              "https://undertale.wiki", "https://eldenring.wiki.gg", "https://minecraft.wiki", "https://eurogamer.net",
+              "https://terraria.wiki.gg", "https://stardewvalleywiki.com", "https://howlongtobeat.com", "https://steamcommunity.com",
+              "https://store.steampowered.com", "https://www.ign.com",  "https://mapgenie.io", "https://www.vg247.com"] # "https://www.rockpapershotgun.com",  "https://en.wikipedia.org/wiki/Lists_of_video_games"  , "https://maxroll.gg",  "https://planetpokemon.com", "https://www.pushsquare.com"
 keywords = [ "game", "gaming", "play", "level", "character", "quest", "multiplayer", "singleplayer", 
             "open world", "rpg", "fps", "adventure", "puzzle", "platformer"] # partial word matching for relevant pages
 
@@ -81,6 +85,8 @@ def crawl(host, depth_limit=1000):
     queue = [host]
     robots = {}
     robots[host] = get_robots(host)
+    
+    warnings.filterwarnings("ignore", category=XMLParsedAsHTMLWarning)
 
     junk_pages = ["login", "signup", "register", "account", "profile", "settings", "privacy", "terms", "contact", "support",
                   "refund", "subscribe", "zip", "apk", "id", "subscriber", "special:", "talk:", "playlist", "user:", "help", 
@@ -106,7 +112,7 @@ def crawl(host, depth_limit=1000):
         robot = robots[base_url]
 
         try:
-            page = requests.get(url, timeout=5, headers=headers, verify=certifi.where()) # get content of webpage
+            page = requests.get(url, timeout=3, headers=headers, verify=certifi.where()) # get content of webpage
             page.encoding = page.apparent_encoding # set encoding to apparent encoding to avoid issues with non-utf-8 pages
         except Exception as e:
             continue
@@ -159,31 +165,34 @@ def crawl(host, depth_limit=1000):
         
         content = soup.get_text(separator=" ").strip()
 
-        # insert into database
-        with db_lock: # so multiple threads don't write to database at the same time
-            db.execute(
-                'INSERT OR IGNORE INTO docs (url, title, author, content)' # ignore ignores duplicates
-                ' VALUES (?, ?, ?, ?)',
-                (url, title, author, content)
-            )
+        try:
+            # insert into database
+            with db_lock: # so multiple threads don't write to database at the same time
+                db.execute(
+                    'INSERT OR IGNORE INTO docs (url, title, author, content)' # ignore ignores duplicates
+                    ' VALUES (?, ?, ?, ?)',
+                    (url, title, author, content)
+                )
 
-            # put outlinks into links table for HITS computation
-            src_row = db.execute(
-                'SELECT docid FROM docs WHERE url = ?', (url,)
-            ).fetchone()
-            if src_row:
-                src_docid = src_row[0]
-                for dst_url in outlink_urls:
-                    dst_row = db.execute(
-                        'SELECT docid FROM docs WHERE url = ?', (dst_url,)
-                    ).fetchone()
-                    if dst_row and dst_row[0] != src_docid:  # skip self-links
-                        db.execute(
-                            'INSERT OR IGNORE INTO links (src_docid, dst_docid)'
-                            ' VALUES (?, ?)',
-                            (src_docid, dst_row[0])
-                        )
-            db.commit()
+                # put outlinks into links table for HITS computation
+                src_row = db.execute(
+                    'SELECT docid FROM docs WHERE url = ?', (url,)
+                ).fetchone()
+                if src_row:
+                    src_docid = src_row[0]
+                    for dst_url in outlink_urls:
+                        dst_row = db.execute(
+                            'SELECT docid FROM docs WHERE url = ?', (dst_url,)
+                        ).fetchone()
+                        if dst_row and dst_row[0] != src_docid:  # skip self-links
+                            db.execute(
+                                'INSERT OR IGNORE INTO links (src_docid, dst_docid)'
+                                ' VALUES (?, ?)',
+                                (src_docid, dst_row[0])
+                            )
+                db.commit()
+        except Exception as e:
+            print("Database error, continuing crawl")
 
         depth += 1
         time.sleep(min_access_time) # politeness for each host

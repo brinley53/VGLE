@@ -28,7 +28,9 @@ flask --app vgle init-db
 ```
 
 # Running Crawler
+If running the complete crawler or smaller crawl, it will automatically call index and hits.
 ```shell
-python vgle/scraper.py
+python vgle/scraper.py [max docs per thread for shorter crawl, optional]
 python vgle/inverted_index.py
+python vgle/hits.py
 ```
