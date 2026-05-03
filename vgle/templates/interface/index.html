@@ -9,6 +9,7 @@ Last modified:
   4/9/2026 - Update posts to docs
   4/17/2026 - Truncate description
   4/26/2026 - Delete blog logic
+  5/2/2026 - Keep query in search bar
 -->
 
 {% extends 'base.html' %}
@@ -22,7 +23,7 @@ Last modified:
 
 {% block content %}
   <form action="{{ url_for('interface.index') }}" method="POST">
-    <input type="text" id="search" name="search">
+    <input type="text" id="search" name="search" value="{{ query or '' }}">
     <input type="submit" value="Search">
   </form>
   {% for doc in docs %}
