@@ -13,7 +13,7 @@ Last modified:
     4/26/2026 - Blank page with no query, delete tutorial pages
     4/30/2026 - integrate stopwords
     5/1/2026 - factor in HITS for ranking
-    5/2/2026 - restrict to top 100 results
+    5/2/2026 - restrict to top 200 results, keep query in search bar
 '''
 
 import math
@@ -30,6 +30,7 @@ bp = Blueprint('interface', __name__)
 
 @bp.route('/', methods=('GET', 'POST')) # home page
 def index():
+    query = []
     if request.method == 'POST': # if search query is submitted
         query = request.form['search'] # get search query from form
         query = query.split(" ") # split into list of words
@@ -106,4 +107,4 @@ def index():
     else:
         docs = []
 
-    return render_template('interface/index.html', docs=docs)
+    return render_template('interface/index.html', docs=docs, query=" ".join(query))

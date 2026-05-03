@@ -33,14 +33,13 @@ import warnings
 import sys
 
 min_access_time = 5 # politeness for hosts
-    #  don't work: "https://www.igdb.com/"] #"https://www.fandom.com/" "https://www.mobygames.com/"
 start_urls = ["https://powerwashsimulator.wiki.gg", "https://bendy.wiki.gg", "https://nookipedia.com", "https://dredge.wiki.gg", 
               "https://undertale.wiki", "https://eldenring.wiki.gg", "https://minecraft.wiki", "https://eurogamer.net",
               "https://terraria.wiki.gg", "https://stardewvalleywiki.com", "https://howlongtobeat.com", "https://steamcommunity.com",
               "https://store.steampowered.com", "https://ign.com",  "https://mapgenie.io", "https://vg247.com",
               "https://rockpapershotgun.com", "https://maxroll.gg",  "https://planetpokemon.com", "https://pushsquare.com", "https://nintendo.com",
-              "https://stardewvalley.net"]
-# #keywords = [ "game", "gaming", "multiplayer", "singleplayer", "rpg", "fps", "platformer"] # partial word matching for relevant pages
+              "https://stardewvalley.net", "https://www.thegamer.com/"]
+keywords = [ "game", "gaming", "multiplayer", "singleplayer", "rpg", "fps", "platformer"] # partial word matching for relevant pages
 frontqueue = {}
 backqueue = {}
 for url in start_urls:
