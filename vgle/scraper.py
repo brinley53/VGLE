@@ -14,6 +14,7 @@ Last modified:
                limit for crawler
     5/2/2026 - add wikis to crawl list, catch errors, crawl only specified hosts, FIX POLITENESS BUG
                implement front and back queue for more politeness (much slower :( )
+    5/3/2026 - account for near duplicates
 '''
 
 from urllib.parse import urljoin, urlparse, urlsplit, urlunsplit
@@ -38,7 +39,7 @@ start_urls = ["https://powerwashsimulator.wiki.gg", "https://bendy.wiki.gg", "ht
               "https://terraria.wiki.gg", "https://stardewvalleywiki.com", "https://howlongtobeat.com", "https://steamcommunity.com",
               "https://store.steampowered.com", "https://ign.com",  "https://mapgenie.io", "https://vg247.com",
               "https://rockpapershotgun.com", "https://maxroll.gg",  "https://planetpokemon.com", "https://pushsquare.com", "https://nintendo.com",
-              "https://stardewvalley.net", "https://www.thegamer.com/"]
+              "https://stardewvalley.net", "https://thegamer.com/"]
 keywords = [ "game", "gaming", "multiplayer", "singleplayer", "rpg", "fps", "platformer"] # partial word matching for relevant pages
 frontqueue = {}
 backqueue = {}
@@ -104,7 +105,7 @@ def crawl(hosts, depth_limit=1000):
 
         junk_pages = ["login", "signup", "register", "account", "profile", "settings", "privacy", "terms", "contact", "support",
                     "refund", "subscribe", "zip", "apk", "subscriber", "special:", "talk:", "playlist", "user:", "help", 
-                    "wikipedia:", "#", "portal:", "join", "/my/", "ziffdavis", "github", "flathub", "jira"] # pages we don't want to crawl
+                    "wikipedia:", "#", "portal:", "join", "/my/", "ziffdavis", "github", "flathub", "jira", "File:", "#"] # pages we don't want to crawl
 
         while frontier_len > 0 and depth < depth_limit: # crawl until queue is empty or we hit the depth limit
             frontier_len = sum([len(frontqueue[host]) for host in hosts]) # calculate if queue is empty
@@ -119,10 +120,11 @@ def crawl(hosts, depth_limit=1000):
                 time.sleep(2)
                 continue
             
-            depth += 1
             url = frontqueue[host].pop(0) # get first url
+            url = normalize_url(url) # normalize for duplicates
             if url in visited:
                 print(f"{url} already visited")
+                depth += 1
                 continue
             with db_lock:
                 visited.add(url) # mark url

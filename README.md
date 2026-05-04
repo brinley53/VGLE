@@ -6,7 +6,7 @@
 flask --app vgle run --debug
 
 3. Visit website:
-http://127.0.0.1:5000/[file] 
+http://127.0.0.1:5000
 
 ## Starter code from flask.com tutorial
 https://flask.palletsprojects.com/en/stable/tutorial/ 

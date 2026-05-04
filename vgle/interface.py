@@ -14,6 +14,7 @@ Last modified:
     4/30/2026 - integrate stopwords
     5/1/2026 - factor in HITS for ranking
     5/2/2026 - restrict to top 200 results, keep query in search bar
+    5/3/2026 - increase query speed with extra sql filtering
 '''
 
 import math
@@ -83,7 +84,9 @@ def index():
                 ' WHERE ii.term IN (' + placeholders + ')'
                 ' AND d.doc_norm IS NOT NULL AND d.doc_norm > 0'
                 ' GROUP BY d.docid, d.url, d.author, d.title, d.content, d.doc_norm, d.authority_score'
-                ' ORDER BY (dot_product / d.doc_norm) DESC',
+                ' HAVING COUNT(DISTINCT ii.term) >= (' + str(len(unique_query_terms)) + ')'
+                ' ORDER BY (dot_product / d.doc_norm) DESC'
+                ' LIMIT 200',
                 unique_query_terms
             ).fetchall()
 
@@ -102,8 +105,6 @@ def index():
                     'content': row['content'],
                     'score':   ALPHA * cosine_sim + (1.0 - ALPHA) * authority
                 })
-            docs.sort(key=lambda d: d['score'], reverse=True) # fancy way to order by score (descending)
-            docs = docs[:200] # return top 200 results
     else:
         docs = []
 
