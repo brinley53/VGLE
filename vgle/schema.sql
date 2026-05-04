@@ -24,7 +24,7 @@ CREATE TABLE docs (
   url TEXT UNIQUE,
   author TEXT,
   title TEXT,
-  content TEXT,
+  content TEXT UNIQUE,
   doc_norm REAL,
   hub_score REAL DEFAULT 0.0,
   authority_score REAL DEFAULT 0.0
