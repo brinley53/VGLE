@@ -14,6 +14,7 @@ Last modified:
     4/30/2026 - integrate stopwords
     5/1/2026 - factor in HITS for ranking
     5/2/2026 - restrict to top 200 results, keep query in search bar
+               Retrieve the excerpt of text where the query terms are in the document
     5/3/2026 - increase query speed with extra sql filtering
 '''
 
@@ -27,14 +28,53 @@ from werkzeug.exceptions import abort
 from vgle.db import get_db
 from vgle.inverted_index import STOPWORDS
 
+# current limitation: only shows excerpt for the first thing it matches in query
+def get_excerpt(content, query_terms, chars=150): # chars: how many characters that show on either side of the term
+    content_lower = content.lower()
+    best_pos = -1
+
+    for term in query_terms:
+        if not term:
+            continue
+        pos = content_lower.find(term)
+        if pos != -1 and (best_pos == -1 or pos < best_pos):
+            best_pos = pos
+
+    # do a sliding window to find the terms
+    if best_pos == -1:
+        return content[:300]  # if no terms found, fallback to return first 300 chars of doc
+
+    start = max(0, best_pos - chars)
+    end = min(len(content), best_pos + chars)
+
+    # move start forward to word boundary so no words get cut off
+    if start > 0:
+        space = content.find(' ', start)
+        if space != -1 and space < best_pos:
+            start = space + 1
+
+    # move end back to word boundary
+    if end < len(content):
+        space = content.rfind(' ', start, end)
+        if space != -1:
+            end = space
+
+    excerpt = content[start:end].strip()
+
+    if start > 0:
+        excerpt = '...' + excerpt
+    if end < len(content):
+        excerpt = excerpt + '...'
+
+    return excerpt
+
 bp = Blueprint('interface', __name__)
 
 @bp.route('/', methods=('GET', 'POST')) # home page
 def index():
-    query = []
+    query_text = request.form.get('search', '')
     if request.method == 'POST': # if search query is submitted
-        query = request.form['search'] # get search query from form
-        query = query.split(" ") # split into list of words
+        query = query_text.split(" ") # split into list of words
         # preprocessing
         processed_query = []
 
@@ -103,9 +143,10 @@ def index():
                     'author':  row['author'],
                     'title':   row['title'],
                     'content': row['content'],
+                    'excerpt': get_excerpt(row['content'], unique_query_terms),
                     'score':   ALPHA * cosine_sim + (1.0 - ALPHA) * authority
                 })
     else:
         docs = []
 
-    return render_template('interface/index.html', docs=docs, query=" ".join(query))
+    return render_template('interface/index.html', docs=docs, query=query_text)
