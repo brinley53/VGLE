@@ -41,7 +41,7 @@ start_urls = ["https://powerwashsimulator.wiki.gg", "https://bendy.wiki.gg", "ht
               "https://terraria.wiki.gg", "https://stardewvalleywiki.com", "https://howlongtobeat.com", "https://steamcommunity.com",
               "https://ign.com",  "https://mapgenie.io", "https://vg247.com",
               "https://rockpapershotgun.com", "https://maxroll.gg",  "https://planetpokemon.com", "https://pushsquare.com", "https://nintendo.com",
-              "https://stardewvalley.net", "https://thegamer.com"] #"https://store.steampowered.com", 
+              "https://stardewvalley.net", "https://thegamer.com", "https://store.steampowered.com"] 
 keywords = [ "game", "gaming", "multiplayer", "singleplayer", "rpg", "fps", "platformer"] # partial word matching for relevant pages
 frontqueue = {}
 backqueue = {}

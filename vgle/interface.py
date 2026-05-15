@@ -192,8 +192,6 @@ def compute_term_proximity(positions):
                     dist = abs(pos1 - pos2)
                     if dist < smallest_dist:
                         smallest_dist = dist
-
-    print("hello", positions, smallest_dist)
     
     if smallest_dist == float('inf'):
         return 0.0
