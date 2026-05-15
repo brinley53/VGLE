@@ -38,6 +38,7 @@ def create_index():
     if not db.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='docs'").fetchone():
         return
     
+        
     db.executescript('''
         DROP TABLE IF EXISTS term_idf;
         DROP TABLE IF EXISTS inverted_index;

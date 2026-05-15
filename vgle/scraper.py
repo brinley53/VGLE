@@ -75,7 +75,7 @@ def normalize_url(url):
         parts.scheme,
         parts.netloc,
         path,
-        "",  # remove query if you want stricter dedup
+        "",
         ""
     ))
 
@@ -107,7 +107,7 @@ def crawl(hosts, depth_limit=1000):
 
         junk_pages = ["login", "signup", "register", "account", "profile", "settings", "privacy", "terms", "contact", "support",
                     "refund", "subscribe", "zip", "apk", "subscriber", "special:", "talk:", "playlist", "user:", "help", 
-                    "wikipedia:", "#", "portal:", "join", "/my/", "ziffdavis", "github", "flathub", "jira", "File:", "#"] # pages we don't want to crawl
+                    "wikipedia:", "portal:", "join", "/my/", "ziffdavis", "github", "flathub", "jira", "File:", "#"] # pages we don't want to crawl
 
         while frontier_len > 0 and depth < depth_limit: # crawl until queue is empty or we hit the depth limit
             frontier_len = sum([len(frontqueue[host]) for host in hosts]) # calculate if queue is empty

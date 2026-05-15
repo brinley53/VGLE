@@ -17,6 +17,7 @@ Last modified:
                Retrieve the excerpt of text where the query terms are in the document
     5/3/2026 - increase query speed with extra sql filtering
     5/14/2026 - deleted unused code AND TERM PROXIMITY SCORING BABY
+    5/15/2026 - fix cosine similiarity calculations
 '''
 
 import json
@@ -116,16 +117,16 @@ def index():
             placeholders = ', '.join(['?'] * len(unique_query_terms))
             raw_docs = db.execute(
                 'SELECT d.docid, d.url, d.author, d.title, d.content, d.doc_norm,'
-                '       d.authority_score, ii.positions, ii.term,'
-                '       SUM(ii.tf * ti.idf * ti.idf) AS dot_product'
+                '       d.authority_score, ii.positions, ii.term, ii.tf'
+                #'       SUM(ii.tf * ti.idf * ti.idf) AS dot_product'
                 ' FROM docs d'
                 ' JOIN inverted_index ii ON d.docid = ii.docid'
                 ' JOIN term_idf ti ON ii.term = ti.term'
                 ' WHERE ii.term IN (' + placeholders + ')'
-                ' AND d.doc_norm IS NOT NULL AND d.doc_norm > 0'
-                ' GROUP BY d.docid, ii.term'
-                ' ORDER BY (dot_product / d.doc_norm) DESC' # also need term proximity
-                ' LIMIT 200',
+                ' AND d.doc_norm IS NOT NULL AND d.doc_norm > 0',
+                # ' GROUP BY d.docid, ii.term'
+                # ' ORDER BY (dot_product / d.doc_norm) DESC'
+                # ' LIMIT 200',
                 unique_query_terms
             ).fetchall()
 
@@ -141,7 +142,6 @@ def index():
             for row in raw_docs:
                 docid = row['docid']
                 if docid not in docs:
-                    cosine_sim = row['dot_product'] / (row['doc_norm'] * query_norm)
                     authority  = row['authority_score'] if row['authority_score'] is not None else 0.0
                     docs[docid] = {
                         'docid':   row['docid'],
@@ -149,16 +149,19 @@ def index():
                         'author':  row['author'],
                         'title':   row['title'],
                         'content': row['content'],
-                        'score':   ALPHA * cosine_sim + GAMMA * authority,
+                        'doc_norm': row['doc_norm'],
+                        'dot_product': 0.0,
                         'positions': {}
                     }
 
+                docs[docid]['dot_product'] += row['tf'] * row['idf'] * row['idf'] # accumulate dot product for cosine similarity
                 docs[docid]['positions'][row['term']] = json.loads(row['positions'])
 
             # term proximity reranking
             ranked_docs = []
 
             for doc in docs.values():
+                cosine_sim = doc['dot_product'] / (doc['doc_norm'] * query_norm)
                 proximity = compute_term_proximity(doc['positions'])
 
                 ranked_docs.append({
@@ -168,10 +171,11 @@ def index():
                     'title': doc['title'],
                     'content': doc['content'],
                     'excerpt': get_excerpt(doc['content'], unique_query_terms),
-                    'score': doc['score'] + BETA * proximity
+                    'score': ALPHA * cosine_sim + BETA * proximity + GAMMA * authority
                 })
 
             docs = sorted(ranked_docs, key=lambda x: x['score'], reverse=True) # sort by final score
+            docs = docs[:200] # restrict to top 200 results
     else:
         docs = []
 
