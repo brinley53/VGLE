@@ -11,11 +11,13 @@ Last modified:
     4/17/2026 - delete temporary database table creation
     4/24/2026 - calculate cosine similarity for documents
     4/30/2026 - add some stopwords
+    5/14/2026 - delete unused code that was commented out, add position information for terms in docs, increase efficiency
 '''
 
 import math
 from vgle.db import get_db
 from vgle import create_app
+import json
 
 STOPWORDS = {
     "a", "an", "the", "and", "or", "but", "in", "on", "at", "to", "for",
@@ -32,24 +34,48 @@ STOPWORDS = {
 def create_index():
     db = get_db()
 
-    # make sure docs table exists before indexing. can remove later maybe?
+    # make sure docs table exists before indexing
     if not db.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='docs'").fetchone():
         return
+    
+    db.executescript('''
+        DROP TABLE IF EXISTS term_idf;
+        DROP TABLE IF EXISTS inverted_index;
 
-    # uncomment this and run init-db if you're having trouble with the new doc_norm column. then you can delete this
-    # try:
-    #     db.execute('ALTER TABLE docs ADD COLUMN doc_norm REAL')
-    # except Exception:
-    #     pass # col already exists
+        CREATE TABLE term_idf (
+            term TEXT PRIMARY KEY,
+            idf REAL,
+            df INTEGER
+        );
 
-    index = {} # initialize the inverted index as a dictionary
+        CREATE TABLE inverted_index (
+            term TEXT,
+            docid INTEGER,
+            tf INTEGER,
+            positions TEXT,
+            PRIMARY KEY (term, docid),
+            FOREIGN KEY (docid) REFERENCES docs (docid)
+        );
+    ''')
+
+    db.commit()
+
     # inverted index with term as key, value as another dict with key = docid, value = term freq
     # doc freq can be determined by checking the length of the dict
 
     docs = db.execute('SELECT * FROM docs') # retrieve documents
+    term_df = {}
+    doc_tf = {}
     
     for doc in docs:
+        i = 0
+        docid = doc["docid"]
+        term_tf = {} 
+        term_pos = {} 
+
         text = doc["content"].split()
+        position = 0
+
         for term in text: 
             # preprocessing
             term = term.lower() # convert to lowercase
@@ -57,57 +83,74 @@ def create_index():
             if term == "" or term in STOPWORDS: # skip stopwords
                 continue
 
-            if term not in index: # create entry for term if not already in index
-                index[term] = {}
+            if term not in term_tf: # create entry for term if not already in index
+                term_tf[term] = 0
+                term_pos[term] = []
+                if term not in term_df: # doc frequency (only counts once per doc)
+                    term_df[term] = 1
+                else:
+                    term_df[term] += 1
 
-            if doc["docid"] not in index[term]: # if doc is not yet counted for the term
-                index[term][doc["docid"]] = 0
+            term_tf[term] += 1
+            term_pos[term].append(position)
+
+            position += 1
+
+        for term in term_tf:
+            tf = term_tf[term]
+            positions = term_pos[term]
+
+            db.execute(
+                'INSERT INTO inverted_index (term, docid, tf, positions)'
+                ' VALUES (?, ?, ?, ?)',
+                (term, docid, tf, json.dumps(positions))
+            )
         
-            index[term][doc["docid"]] += 1 # add one to the term frequency for the doc
+        doc_tf[docid] = term_tf
+
+        if i % 500 == 0:
+            db.commit()
+        
+    db.commit()
 
     # calculate idf for each term in dictionary
     N = db.execute('SELECT COUNT(*) FROM docs').fetchone()[0] # total number of documents
 
-    sorted_terms = sorted(index) # sort the terms alphabetically
+    sorted_terms = sorted(term_df) # sort the terms alphabetically
     idf = {} # create dictionary for idf
 
-    i = 0
-    for term in sorted_terms: # go through words
-        df = len(index[term])
-        idf[term] = math.log10(N/df) # calculate idf for each term
+    for term in sorted_terms: # go through words to compute idf
+        i = 0
+        df = term_df[term]
+        term_idf = math.log10(N/df)
+        idf[term] = term_idf # calculate idf for each term
         
         # insert into database
         db.execute(
             'INSERT INTO term_idf (term, idf, df)'
             ' VALUES (?, ?, ?)',
-            (term, idf[term], df)
+            (term, term_idf, df)
         )
-        
-        # create document vectors
-        for actual_docid, tf in index[term].items(): # iterate through every document that has the current term. "actual_docid" to be safe for naming collisions
-                # insert into database
-                db.execute(
-                    'INSERT INTO inverted_index (term, docid, tf)'
-                    ' VALUES (?, ?, ?)',
-                    (term, actual_docid, tf)
-                )
-        i += 1
 
-    # compute document norms for cosine sim: |d| = sqrt(SUM((tf * idf)^2))
-    doc_norm_accumulator = {}
-    for term in index:
-        term_idf_val = idf[term]
-        for docid, tf in index[term].items():
-            weight = tf * term_idf_val
-            if docid not in doc_norm_accumulator:
-                doc_norm_accumulator[docid] = 0.0
-            doc_norm_accumulator[docid] += weight * weight
+        if i % 500 == 0:
+            db.commit()
 
-    for docid, sum_sq in doc_norm_accumulator.items():
+    for docid, term_tf in doc_tf.items():
+        i = 0
+        sum_sq = 0.0
+
+        for term, tf in term_tf.items():
+            term_idf = idf[term]
+            weight = tf * term_idf
+            sum_sq += weight * weight
+
         db.execute(
             'UPDATE docs SET doc_norm = ? WHERE docid = ?',
             (math.sqrt(sum_sq), docid)
         )
+
+        if i % 500 == 0:
+            db.commit()
 
     db.commit()
 

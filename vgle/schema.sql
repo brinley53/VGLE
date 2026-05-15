@@ -12,6 +12,7 @@ Last modified:
   4/24/2026 - urls unique again
   4/26/2026 - Delete tutorial tables
   4/30/2026 - add tables and rows for HITS scores and calculations
+  5/14/2026 - add position to inverted index
 */
 
 DROP TABLE IF EXISTS links;
@@ -40,6 +41,7 @@ CREATE TABLE inverted_index (
   term TEXT,
   docid INTEGER,
   tf INTEGER,
+  positions TEXT,
   PRIMARY KEY (term, docid),
   FOREIGN KEY (docid) REFERENCES docs (docid)
 );

@@ -15,6 +15,7 @@ Last modified:
     5/2/2026 - add wikis to crawl list, catch errors, crawl only specified hosts, FIX POLITENESS BUG
                implement front and back queue for more politeness (much slower :( )
     5/3/2026 - account for near duplicates
+    5/14/2026 - delete unused code that was commented out
 '''
 
 from urllib.parse import urljoin, urlparse, urlsplit, urlunsplit
@@ -39,7 +40,7 @@ start_urls = ["https://powerwashsimulator.wiki.gg", "https://bendy.wiki.gg", "ht
               "https://terraria.wiki.gg", "https://stardewvalleywiki.com", "https://howlongtobeat.com", "https://steamcommunity.com",
               "https://store.steampowered.com", "https://ign.com",  "https://mapgenie.io", "https://vg247.com",
               "https://rockpapershotgun.com", "https://maxroll.gg",  "https://planetpokemon.com", "https://pushsquare.com", "https://nintendo.com",
-              "https://stardewvalley.net", "https://thegamer.com/"]
+              "https://stardewvalley.net", "https://thegamer.com"]
 keywords = [ "game", "gaming", "multiplayer", "singleplayer", "rpg", "fps", "platformer"] # partial word matching for relevant pages
 frontqueue = {}
 backqueue = {}
@@ -132,13 +133,6 @@ def crawl(hosts, depth_limit=1000):
             if base_url != host: # only crawl the specific host
                 print(f"Base url {base_url} != host {host}")
                 continue
-
-            # get relevant robots.txt
-            # if host not in robots:
-            #     try:
-            #         robots[host] = get_robots(host)
-            #     except Exception as e:
-            #         continue 
         
             robot = robots[host]
 
@@ -167,13 +161,6 @@ def crawl(hosts, depth_limit=1000):
                 continue
 
             soup = BeautifulSoup(page.content, "html.parser") # html parser
-
-            # partial word matching to find relevant pages
-            # text = soup.get_text().lower()
-            # if not any(word in text for word in keywords):
-            #     continue
-
-            # get metadata
             
             title = soup.title
             if title:

@@ -16,6 +16,7 @@ Last modified:
     5/2/2026 - restrict to top 200 results, keep query in search bar
                Retrieve the excerpt of text where the query terms are in the document
     5/3/2026 - increase query speed with extra sql filtering
+    5/14/2026 - deleted unused code
 '''
 
 import math
@@ -89,10 +90,6 @@ def index():
         # deduplicate terms while preserving order so each term contributes idf once to query vector. query vector has 1 dim per unique term
         unique_query_terms = list(dict.fromkeys(processed_query))
 
-        # save query to file
-        with open('vgle/query.txt', 'w') as query_file: # w erases previous results
-            query_file.write(" ".join(processed_query))
-
     # access database
     db = get_db()
 
@@ -124,8 +121,7 @@ def index():
                 ' WHERE ii.term IN (' + placeholders + ')'
                 ' AND d.doc_norm IS NOT NULL AND d.doc_norm > 0'
                 ' GROUP BY d.docid, d.url, d.author, d.title, d.content, d.doc_norm, d.authority_score'
-                ' HAVING COUNT(DISTINCT ii.term) >= (' + str(len(unique_query_terms)) + ')'
-                ' ORDER BY (dot_product / d.doc_norm) DESC'
+                ' ORDER BY (dot_product / d.doc_norm) DESC' # also need term proximity
                 ' LIMIT 200',
                 unique_query_terms
             ).fetchall()
