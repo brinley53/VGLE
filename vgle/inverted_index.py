@@ -66,13 +66,15 @@ def create_index():
     docs = db.execute('SELECT * FROM docs') # retrieve documents
     term_df = {}
     doc_tf = {}
-    
-    for doc in docs:
-        i = 0
-        docid = doc["docid"]
-        term_tf = {} 
-        term_pos = {} 
 
+    i = 0
+    rows = []   # batch buffer for executemany
+
+    for doc in docs:
+        docid = doc["docid"]
+        term_tf = {}
+        term_pos = {}
+        
         text = doc["content"].split()
         position = 0
 
@@ -97,46 +99,53 @@ def create_index():
             position += 1
 
         for term in term_tf:
-            tf = term_tf[term]
-            positions = term_pos[term]
+            rows.append((term, docid, term_tf[term], json.dumps(term_pos[term])))
 
-            db.execute(
-                'INSERT INTO inverted_index (term, docid, tf, positions)'
-                ' VALUES (?, ?, ?, ?)',
-                (term, docid, tf, json.dumps(positions))
-            )
-        
         doc_tf[docid] = term_tf
 
-        if i % 500 == 0:
+        i += 1
+        if i % 1000 == 0:
+            db.executemany(
+                'INSERT INTO inverted_index (term, docid, tf, positions) VALUES (?, ?, ?, ?)',
+                rows
+            )
+            rows.clear()
             db.commit()
+
+    # Flush remaining rows
+    if rows:
+        db.executemany(
+            'INSERT INTO inverted_index (term, docid, tf, positions) VALUES (?, ?, ?, ?)',
+            rows
+        )
         
     db.commit()
 
     # calculate idf for each term in dictionary
     N = db.execute('SELECT COUNT(*) FROM docs').fetchone()[0] # total number of documents
-
     sorted_terms = sorted(term_df) # sort the terms alphabetically
-    idf = {} # create dictionary for idf
-
-    for term in sorted_terms: # go through words to compute idf
-        i = 0
+    idf = {} # create dictionary for idf    
+    idf_rows = []
+    i = 0
+    for term in sorted_terms:
         df = term_df[term]
-        term_idf = math.log10(N/df)
-        idf[term] = term_idf # calculate idf for each term
-        
-        # insert into database
-        db.execute(
-            'INSERT INTO term_idf (term, idf, df)'
-            ' VALUES (?, ?, ?)',
-            (term, term_idf, df)
-        )
-
-        if i % 500 == 0:
+        term_idf_val = math.log10(N / df)
+        idf[term] = term_idf_val
+        idf_rows.append((term, term_idf_val, df))
+        i += 1
+        if i % 1000 == 0:
+            db.executemany('INSERT INTO term_idf (term, idf, df) VALUES (?, ?, ?)', idf_rows)
+            idf_rows.clear()
             db.commit()
 
+    if idf_rows:
+        db.executemany('INSERT INTO term_idf (term, idf, df) VALUES (?, ?, ?)', idf_rows)
+    db.commit()
+
+    # calculate doc norms
+    doc_norm_rows = []
+    i = 0
     for docid, term_tf in doc_tf.items():
-        i = 0
         sum_sq = 0.0
 
         for term, tf in term_tf.items():
@@ -144,14 +153,16 @@ def create_index():
             weight = tf * term_idf
             sum_sq += weight * weight
 
-        db.execute(
-            'UPDATE docs SET doc_norm = ? WHERE docid = ?',
-            (math.sqrt(sum_sq), docid)
-        )
+        doc_norm_rows.append((math.sqrt(sum_sq), docid))
 
-        if i % 500 == 0:
+        if i % 1000 == 0:
+            db.executemany('UPDATE docs SET doc_norm = ? WHERE docid = ?', doc_norm_rows)
+            doc_norm_rows.clear()
             db.commit()
+        i += 1
 
+    if doc_norm_rows:
+        db.executemany('UPDATE docs SET doc_norm = ? WHERE docid = ?', doc_norm_rows)
     db.commit()
 
 if __name__ == "__main__":

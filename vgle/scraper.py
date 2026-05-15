@@ -26,6 +26,7 @@ import requests
 from bs4 import BeautifulSoup, XMLParsedAsHTMLWarning
 
 from vgle import create_app
+from vgle.db import init_db
 
 import threading
 import time
@@ -38,9 +39,9 @@ min_access_time = 5 # politeness for hosts
 start_urls = ["https://powerwashsimulator.wiki.gg", "https://bendy.wiki.gg", "https://nookipedia.com", "https://dredge.wiki.gg", 
               "https://undertale.wiki", "https://eldenring.wiki.gg", "https://minecraft.wiki", "https://eurogamer.net",
               "https://terraria.wiki.gg", "https://stardewvalleywiki.com", "https://howlongtobeat.com", "https://steamcommunity.com",
-              "https://store.steampowered.com", "https://ign.com",  "https://mapgenie.io", "https://vg247.com",
+              "https://ign.com",  "https://mapgenie.io", "https://vg247.com",
               "https://rockpapershotgun.com", "https://maxroll.gg",  "https://planetpokemon.com", "https://pushsquare.com", "https://nintendo.com",
-              "https://stardewvalley.net", "https://thegamer.com"]
+              "https://stardewvalley.net", "https://thegamer.com"] #"https://store.steampowered.com", 
 keywords = [ "game", "gaming", "multiplayer", "singleplayer", "rpg", "fps", "platformer"] # partial word matching for relevant pages
 frontqueue = {}
 backqueue = {}
@@ -242,6 +243,7 @@ def multi_crawl(depth_limit=1000):
 if __name__ == "__main__":
     app = create_app()
     with app.app_context():
+        init_db() 
         multi_crawl(depth_limit=int(sys.argv[1]) if len(sys.argv) > 1 else float('inf')) # run crawl, get depth limit from command line
         print("Crawling complete")
         # run inverted index and HITS after crawling is done
