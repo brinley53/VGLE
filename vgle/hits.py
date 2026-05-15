@@ -13,7 +13,7 @@ from vgle.db import get_db
 from vgle import create_app
 
 
-def compute_hits(num_iterations=100, tol=1e-6): 
+def compute_hits(num_iterations=200, tol=1e-6): 
     db = get_db()
 
     doc_rows = db.execute('SELECT docid FROM docs').fetchall()

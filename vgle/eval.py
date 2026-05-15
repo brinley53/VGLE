@@ -24,7 +24,7 @@ HOW TO USE THIS PROGRAM:
  6. run python vgle/eval.py and get results
 '''
 
-QUERY = "hello"
+QUERY = ""
 
 '''
 manual relevance judgements
@@ -40,20 +40,101 @@ judgement grades:
 relevance_judgments = {
 #WARNING: THESE ARE JUST EXAMPLES I RAN ON MY MEASLY 40 DOCS. YOU WILL NEED TO RECOMPUTE THESE FOR YOUR CORPUS
 #ALL SCORES DEFAULT TO 0 WHEN THEY COME OUT, SO YOU NEED TO CHANGE THE SCORES AFTER PASTING IN
-    "undertale": {
-        "6": 2,  # The Undertale Wiki
-        "23": 1  # Category:Characters - The Undertale Wiki
+    "shane marriage guide": {
+        "729": 2,  # Marriage - Stardew Valley Wiki
+        "3484": 2,  # Shane - Stardew Valley Wiki
+        "692": 1,  # Villagers - Stardew Valley Wiki
+        "3549": 0,  # Stardew Valley -   Post-Launch Progress Update: Version 1.1 
+        "7352": 0,  # Morris - Stardew Valley Wiki
+        "713": 1,  # Friendship - Stardew Valley Wiki
+        "8788": 0,  # Bouncer - Stardew Valley Wiki
+        "7429": 0,  # Grandpa - Stardew Valley Wiki
+        "5324": 0,  # Birdie - Stardew Valley Wiki
+        "2588": 0,  # Emily - Stardew Valley Wiki
+        "3870": 0,  # How Does Royal Marriage Work In Europa Universalis 5?
+        "7694": 2,  # Bouquet - Stardew Valley Wiki
+        "3868": 0,  # Monolith - Last Epoch Maxroll.gg
+        "2675": 0,  # Stardew Valley -   Dev Update #24
+        "7680": 0,  # Void Ghost Pendant - Stardew Valley Wiki
+        "1876": 0,  # Bosses help and Guides for Diablo 4 - D4 Maxroll.gg
+        "9346": 0,  # Story of Seasons: Grand Bazaar | TheGamer
+        "3524": 0,  # Marnie - Stardew Valley Wiki
+        "3357": 0,  # Stardew Valley -   Blog
+        "7390": 0  # Jas - Stardew Valley Wiki
     },
     "blue chicken": {
-        "35": 0,  # All Subnautica 2 Databank entries, and where to get them | R
-        "17": 0,  # Maxroll - News, Guides & Tools for Diablo 4, Lost Ark, PoE &
-        "27": 0,  # Upcoming Video Game Releases May 2026 | Eurogamer.net
-        "13": 0,  # Homepage | Planet Pokémon
-        "23": 0,  # Category:Characters - The Undertale Wiki
-        "41": 0,  # Map Genie | Awesome Interactive Game Maps
-        "19": 0,  # Nintendo - Official Site: Consoles, Games, News, and More
-        "18": 0  # Push Square | PS5, PSVR2 News & Reviews 24/7
+        "3464": 2,  # Chicken - Stardew Valley Wiki
+        "6445": 1,  # Slime Egg - Stardew Valley Wiki
+        "4938": 0,  # Minecraft Live is Coming Soon! – Minecraft Wiki
+        "347": 1,  # Animals - Stardew Valley Wiki
+        "817": 0,  # Item – Minecraft Wiki
+        "2611": 0,  # Roe - Stardew Valley Wiki
+        "6833": 0,  # Tiger Hat - Stardew Valley Wiki
+        "6740": 0,  # Mr. Qi's Hat - Stardew Valley Wiki
+        "6763": 0,  # Qi Mask - Stardew Valley Wiki
+        "6886": 0,  # Dragonscale Boots - Stardew Valley Wiki
+        "5819": 0,  # Golden Chicken - Stardew Valley Wiki
+        "5770": 0,  # Blue Prince - IGN
+        "5790": 0,  # Blue Prince Interactive Maps and Locations - IGN
+        "3445": 1,  # Coop - Stardew Valley Wiki
+        "3423": 0,  # The Blue Gate - ARC Raiders - IGN
+        "4295": 0,  # Blue Lock Rivals codes for May 2026 | VG247
+        "8284": 0,  # Blue Prince | TheGamer
+        "5809": 0,  # Mount Holly - Blue Prince - IGN
+        "2767": 0,  # Project: Mist on Steam
+        "3776": 0,  # Traveling Merchant - Official Terraria Wiki
+        "2262": 0,  # Modding:Migrate to Stardew Valley 1.6.9 - Stardew Valley Wik
+        "1833": 0,  # Items - Official Terraria Wiki
+        "2184": 0,  # Pets - Official Terraria Wiki
+        "61": 0,  # Version History - Stardew Valley Wiki
+        "2208": 0,  # Mounts - Official Terraria Wiki
+        "1431": 0,  # Mounts - Official Terraria Wiki
+        "2267": 0  # Miscellaneous - Official Terraria Wiki
     },
+    "rennala guide": {
+        "5887": 2,  # Elden Ring: How to beat Rennala, Queen of the Full Moon | Ro
+        "5674": 0,  # How to respec in Elden Ring: Larval Tear locations | Rock Pa
+        "5477": 0,  # Miriel, Pastor of Vows - Eldenpedia
+        "1261": 2,  # Rennala, Queen of the Full Moon - Eldenpedia
+        "5740": 2,  # Rennala, Queen of the Full Moon - Eldenpedia
+        "2063": 0,  # Carian Royal Family - Eldenpedia
+        "3062": 0,  # Radagon of the Golden Order - Eldenpedia
+        "1238": 0,  # Radagon of the Golden Order - Eldenpedia
+        "2034": 0,  # Academy of Raya Lucaria - Eldenpedia
+        "124": 1,  # Bosses - Eldenpedia
+        "3868": 0,  # Monolith - Last Epoch Maxroll.gg
+        "85": 0,  # Elden Ring boss locations: All 238 Elden Ring bosses | Rock 
+        "5473": 0  # Elden Ring Sellen quest walkthrough | Rock Paper Shotgun
+    },
+    "wandering seals locations": {
+    "7408": 2,  # All Wandering Seals in Where Winds Meet | Map Genie
+    "471": 1,  # Where Winds Meet Map | Map Genie
+    "2034": 0,  # Academy of Raya Lucaria - Eldenpedia
+    "239": 0,  # Nightreign:Locations - Eldenpedia
+    "2205": 0,  # Talisman - Charms & Sets - D4 Maxroll.gg
+    "5318": 0,  # Sorcerer Thops - Eldenpedia
+    "2586": 0,  # Sellia, Town of Sorcery - Eldenpedia
+    "8535": 0,  # All Hallownest Seals in Hollow Knight | Map Genie
+    "827": 0,  # Hollow Knight Interactive Map | Map Genie
+    "4472": 0,  # Sailor Piece | Eurogamer.net
+    "3743": 0,  # A Wandering Trader Springs to Life! – Minecraft Wiki
+    "767": 0,  # Locations - The Bendy Wiki
+    "5717": 0,  # All Abyss Cressets in Crimson Desert | Map Genie
+    "2440": 0  # Crimson Desert Guide - IGN
+}, "genocide route": {
+    "1122": 1,  # Endings - The Undertale Wiki
+    "2151": 0,  # Player - The Undertale Wiki
+    "6003": 0,  # Mettaton NEO - The Undertale Wiki
+    "278": 0,  # Chara - The Undertale Wiki
+    "4869": 0,  # Category:Enemies - The Undertale Wiki
+    "651": 0,  # Vendor - The Undertale Wiki
+    "5900": 0,  # Vendor - The Undertale Wiki
+    "1193": 2,  # Genocide Route - The Undertale Wiki
+    "1862": 0,  # Undertale Demo - The Undertale Wiki
+    "1591": 0,  # Page organization - The Undertale Wiki
+    "7607": 0,  # Pokémon Red/Blue Map | Map Genie
+    "5230": 0  # SAVE - The Undertale Wiki
+}
 }
 
 DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "instance", "vsgl.sqlite")
