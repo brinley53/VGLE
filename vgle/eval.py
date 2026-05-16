@@ -62,7 +62,7 @@ relevance_judgments = {
         "3357": 0,  # Stardew Valley -   Blog
         "7390": 0  # Jas - Stardew Valley Wiki
     },
-    "blue chicken": {
+    "green tea": { # example query originally blue chicken
         "3464": 2,  # Chicken - Stardew Valley Wiki
         "6445": 1,  # Slime Egg - Stardew Valley Wiki
         "4938": 0,  # Minecraft Live is Coming Soon! – Minecraft Wiki
@@ -107,34 +107,35 @@ relevance_judgments = {
         "5473": 0  # Elden Ring Sellen quest walkthrough | Rock Paper Shotgun
     },
     "wandering seals locations": {
-    "7408": 2,  # All Wandering Seals in Where Winds Meet | Map Genie
-    "471": 1,  # Where Winds Meet Map | Map Genie
-    "2034": 0,  # Academy of Raya Lucaria - Eldenpedia
-    "239": 0,  # Nightreign:Locations - Eldenpedia
-    "2205": 0,  # Talisman - Charms & Sets - D4 Maxroll.gg
-    "5318": 0,  # Sorcerer Thops - Eldenpedia
-    "2586": 0,  # Sellia, Town of Sorcery - Eldenpedia
-    "8535": 0,  # All Hallownest Seals in Hollow Knight | Map Genie
-    "827": 0,  # Hollow Knight Interactive Map | Map Genie
-    "4472": 0,  # Sailor Piece | Eurogamer.net
-    "3743": 0,  # A Wandering Trader Springs to Life! – Minecraft Wiki
-    "767": 0,  # Locations - The Bendy Wiki
-    "5717": 0,  # All Abyss Cressets in Crimson Desert | Map Genie
-    "2440": 0  # Crimson Desert Guide - IGN
-}, "genocide route": {
-    "1122": 1,  # Endings - The Undertale Wiki
-    "2151": 0,  # Player - The Undertale Wiki
-    "6003": 0,  # Mettaton NEO - The Undertale Wiki
-    "278": 0,  # Chara - The Undertale Wiki
-    "4869": 0,  # Category:Enemies - The Undertale Wiki
-    "651": 0,  # Vendor - The Undertale Wiki
-    "5900": 0,  # Vendor - The Undertale Wiki
-    "1193": 2,  # Genocide Route - The Undertale Wiki
-    "1862": 0,  # Undertale Demo - The Undertale Wiki
-    "1591": 0,  # Page organization - The Undertale Wiki
-    "7607": 0,  # Pokémon Red/Blue Map | Map Genie
-    "5230": 0  # SAVE - The Undertale Wiki
-}
+        "7408": 2,  # All Wandering Seals in Where Winds Meet | Map Genie
+        "471": 1,  # Where Winds Meet Map | Map Genie
+        "2034": 0,  # Academy of Raya Lucaria - Eldenpedia
+        "239": 0,  # Nightreign:Locations - Eldenpedia
+        "2205": 0,  # Talisman - Charms & Sets - D4 Maxroll.gg
+        "5318": 0,  # Sorcerer Thops - Eldenpedia
+        "2586": 0,  # Sellia, Town of Sorcery - Eldenpedia
+        "8535": 0,  # All Hallownest Seals in Hollow Knight | Map Genie
+        "827": 0,  # Hollow Knight Interactive Map | Map Genie
+        "4472": 0,  # Sailor Piece | Eurogamer.net
+        "3743": 0,  # A Wandering Trader Springs to Life! – Minecraft Wiki
+        "767": 0,  # Locations - The Bendy Wiki
+        "5717": 0,  # All Abyss Cressets in Crimson Desert | Map Genie
+        "2440": 0  # Crimson Desert Guide - IGN
+    }, 
+    "genocide route": {
+        "1122": 1,  # Endings - The Undertale Wiki
+        "2151": 0,  # Player - The Undertale Wiki
+        "6003": 0,  # Mettaton NEO - The Undertale Wiki
+        "278": 0,  # Chara - The Undertale Wiki
+        "4869": 0,  # Category:Enemies - The Undertale Wiki
+        "651": 0,  # Vendor - The Undertale Wiki
+        "5900": 0,  # Vendor - The Undertale Wiki
+        "1193": 2,  # Genocide Route - The Undertale Wiki
+        "1862": 0,  # Undertale Demo - The Undertale Wiki
+        "1591": 0,  # Page organization - The Undertale Wiki
+        "7607": 0,  # Pokémon Red/Blue Map | Map Genie
+        "5230": 0  # SAVE - The Undertale Wiki
+    }
 }
 
 DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "instance", "vsgl.sqlite")

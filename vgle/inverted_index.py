@@ -37,27 +37,6 @@ def create_index():
     # make sure docs table exists before indexing
     if not db.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='docs'").fetchone():
         return
-    
-        
-    db.executescript('''
-        DROP TABLE IF EXISTS term_idf;
-        DROP TABLE IF EXISTS inverted_index;
-
-        CREATE TABLE term_idf (
-            term TEXT PRIMARY KEY,
-            idf REAL,
-            df INTEGER
-        );
-
-        CREATE TABLE inverted_index (
-            term TEXT,
-            docid INTEGER,
-            tf INTEGER,
-            positions TEXT,
-            PRIMARY KEY (term, docid),
-            FOREIGN KEY (docid) REFERENCES docs (docid)
-        );
-    ''')
 
     db.commit()
 

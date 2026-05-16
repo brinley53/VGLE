@@ -41,12 +41,4 @@ def create_app(test_config=None):
     app.register_blueprint(interface.bp)
     app.add_url_rule('/', endpoint='index')
 
-    # from . import scraper 
-    # with app.app_context():
-    #     scraper.crawl()
-    
-    # from . import inverted_index
-    # with app.app_context():
-    #     inverted_index.create_index()
-
     return app
